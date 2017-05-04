@@ -1,5 +1,9 @@
-package: github.com/tendermint/basecoin-examples/paytovote
+package: github.com/tendermint/basecoin-examples/invoicer
 import:
+- package: github.com/pkg/errors
+- package: github.com/shopspring/decimal
+- package: github.com/spf13/cobra
+- package: github.com/spf13/pflag
 - package: github.com/tendermint/abci
   version: develop
   subpackages:
@@ -10,16 +14,12 @@ import:
   - cmd/commands
   - state
   - types
-- package: github.com/tendermint/tmlibs
-  version: basecoin-cli
 - package: github.com/tendermint/go-wire
   version: develop
-- package: github.com/spf13/cobra
-testImport:
-- package: github.com/stretchr/testify
+- package: github.com/tendermint/tendermint
+  version: logging-arch-proposal
+- package: github.com/tendermint/tmlibs
+  version: log
   subpackages:
-  - assert
-- package: github.com/tendermint/merkleeyes
-  version: develop
-  subpackages:
-  - client
+  - common
+  - merkle

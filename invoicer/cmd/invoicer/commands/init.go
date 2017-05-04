@@ -1,16 +1,18 @@
 package commands
 
 import (
+	"github.com/tendermint/basecoin-examples/invoicer/plugins/invoicer"
 	bcmd "github.com/tendermint/basecoin/cmd/commands"
+	btypes "github.com/tendermint/basecoin/types"
 )
 
 func init() {
 
 	//Register invoicer with basecoin
-	bcmd.RegisterStartPlugin(InvoicerName, func() types.Plugin { return invoicer.New() })
+	bcmd.RegisterStartPlugin(invoicer.Name, func() btypes.Plugin { return invoicer.New() })
 
 	//Change the working directory
-	bcmd.DefaultHome = ".invoicer"
+	bcmd.DefaultHome = "." + invoicer.Name
 
 	//Change the GenesisJSON
 	bcmd.GenesisJSON = `{
@@ -21,10 +23,10 @@ func init() {
     {
       "amount": 10,
       "name": "",
-      "pub_key": [
-	1,
-	"7B90EA87E7DC0C7145C8C48C08992BE271C7234134343E8A8E8008E617DE7B30"
-      ]
+      "pub_key": {
+        "type": "ed25519",
+        "data": "7B90EA87E7DC0C7145C8C48C08992BE271C7234134343E8A8E8008E617DE7B30"
+      }
     }
   ],
   "app_options": {
@@ -35,12 +37,8 @@ func init() {
       },
       "coins": [
         {
-          "denom": "issueToken",
-          "amount": 1000
-        },
-        {
-          "denom": "voteToken",
-          "amount": 1000
+          "denom": "mycoin",
+          "amount": 9007199254740992
         }
       ]
     }]
