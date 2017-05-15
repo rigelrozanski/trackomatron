@@ -37,7 +37,6 @@ func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, 
 	if err != nil {
 		return abciErrDecodingTX(err)
 	}
-
 	invoice := *reader
 
 	//Validate

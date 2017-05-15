@@ -25,10 +25,10 @@ func TestRunInvoice(t *testing.T) {
 		amt,
 		"btc",
 		time.Now().Add(time.Hour*100),
-	)
+	).Wrap()
 
 	//txBytes := types.TxBytes(invoice, 0x01)
-	txBytes := types.TxBytes(struct{ types.Invoice }{invoice}, 0x01)
+	txBytes := types.TxBytes(invoice, 0x01)
 	//txBytes := wire.BinaryBytes(struct{ types.Invoice }{invoice})
 
 	var invoiceRead = new(types.Invoice)
@@ -36,7 +36,7 @@ func TestRunInvoice(t *testing.T) {
 	//err = wire.ReadBinaryBytes(txBytes, invoiceRead)
 	err = wire.ReadBinaryBytes(txBytes[1:], invoiceRead)
 	require.Nil(t, err)
-	require.NotNil(t, *invoiceRead)
-	_, ok := (*invoiceRead).(*types.Wage)
+	require.False(t, invoiceRead.Empty())
+	_, ok := invoiceRead.Unwrap().(*types.Wage)
 	require.True(t, ok)
 }

@@ -260,7 +260,7 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) error {
 			amt,
 			accCur,
 			dueDate,
-		)
+		).Wrap()
 	case types.TBTxExpenseOpen, types.TBTxExpenseEdit:
 		if len(viper.GetString(FlagTaxesPaid)) == 0 {
 			return errors.New("need --taxes flag")
@@ -288,13 +288,13 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) error {
 			docBytes,
 			filename,
 			taxes,
-		)
+		).Wrap()
 	default:
 		return errors.New("Unrecognized TypeBytes")
 	}
 
 	//txBytes := invoice.TxBytesOpen()
-	txBytes := types.TxBytes(struct{ types.Invoice }{invoice}, txTB)
+	txBytes := types.TxBytes(invoice, txTB)
 	return bcmd.AppTx(invoicer.Name, txBytes)
 }
 

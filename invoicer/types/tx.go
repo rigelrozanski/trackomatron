@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/tendermint/go-wire"
-	"github.com/tendermint/go-wire/data"
 	"github.com/tendermint/tmlibs/merkle"
 )
 
@@ -52,20 +51,21 @@ func NewProfile(Name string, AcceptedCur string, DepositInfo string,
 
 //////////////////////////////////////////////////////////////////////
 
-type Invoice interface {
+// +gen holder:"Invoice,Impl[*Wage,*Expense]"
+type InvoiceInner interface {
 	SetID()
 	GetID() []byte
 	GetCtx() Context
 	Close(close *CloseInvoice)
 }
 
-var invoiceMapper = data.NewMapper(struct{ Invoice }{}).
-	RegisterImplementation(&Wage{}, "wage", 0x01).
-	RegisterImplementation(&Expense{}, "expense", 0x02)
+//var invoiceMapper = data.NewMapper(struct{ Invoice }{}).
+//RegisterImplementation(&Wage{}, "wage", 0x01).
+//RegisterImplementation(&Expense{}, "expense", 0x02)
 
 //for checking errors at compile time
-var _ Invoice = new(Wage)
-var _ Invoice = new(Expense)
+//var _ Invoice = new(Wage)
+//var _ Invoice = new(Expense)
 
 type Wage struct {
 	Ctx            Context
@@ -187,5 +187,4 @@ func NewCloseInvoice(ID []byte, TransactionID string, PaymentCurTime *AmtCurTime
 		TransactionID:  TransactionID,
 		PaymentCurTime: PaymentCurTime,
 	}
-
 }

@@ -99,7 +99,7 @@ func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(wire.JSONBytes(invoice)))
 	}
 
-	expense, isExpense := invoice.(*types.Expense)
+	expense, isExpense := invoice.Unwrap().(*types.Expense)
 	if isExpense {
 		err = downloadExp(expense)
 		if err != nil {
@@ -129,8 +129,9 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Errorf("bad invoice in active invoice list %v", err)
 		}
-		wage, isWage := invoice.(*types.Wage)
-		expense, isExpense := invoice.(*types.Expense)
+
+		wage, isWage := invoice.Unwrap().(*types.Wage)
+		expense, isExpense := invoice.Unwrap().(*types.Expense)
 
 		var ctx types.Context
 		var transactionID string
