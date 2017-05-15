@@ -29,135 +29,16 @@ func validateInvoiceCtx(ctx types.Context) abci.Result {
 	}
 }
 
-func runTxWage(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte) (res abci.Result) {
+func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, shouldExist bool) (res abci.Result) {
 
 	// Decode tx
-	var wage = new(types.Wage)
-	err := wire.ReadBinaryBytes(txBytes, wage)
+	var reader = new(types.Invoice)
+	err := wire.ReadBinaryBytes(txBytes, reader)
 	if err != nil {
 		return abciErrDecodingTX(err)
 	}
 
-	//Validate
-	res = validateInvoiceCtx(wage.Ctx)
-	if res.IsErr() {
-		return res
-	}
-
-	//remove before editing, wage.ID will be empty if not editing
-	if len(wage.ID) > 0 {
-		invoices, err := getListInvoice(store)
-		if err != nil {
-			return abciErrGetInvoices
-		}
-		found := false
-		for i, v := range invoices {
-			if bytes.Compare(v, wage.ID) == 0 {
-				invoices = append(invoices[:i], invoices[i+1:]...)
-				found = true
-				break
-			}
-		}
-		if found {
-			store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
-		} else {
-			return abciErrInvoiceMissing
-		}
-	}
-
-	//Set the id, then validate a bit more
-	wage.SetID()
-
-	if _, err := getProfile(store, wage.Ctx.Sender); err != nil {
-		return abciErrNoSender
-	}
-	if _, err := getProfile(store, wage.Ctx.Receiver); err != nil {
-		return abciErrNoReceiver
-	}
-
-	//Check if invoice already exists
-	invoices, err := getListInvoice(store)
-	if err != nil {
-		return abciErrGetInvoices
-	}
-	for _, in := range invoices {
-		if bytes.Compare(in, wage.ID) == 0 {
-			return abciErrDupInvoice
-		}
-	}
-
-	//Store invoice
-	store.Set(InvoiceKey(wage.ID), wire.BinaryBytes(wage))
-
-	//also add it to the list of open invoices
-	invoices = append(invoices, wage.ID)
-	store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
-	return abci.OK
-}
-
-func runTxExpense(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte) (res abci.Result) {
-
-	// Decode tx
-	var expense = new(types.Expense)
-	err := wire.ReadBinaryBytes(txBytes, expense)
-	if err != nil {
-		return abciErrDecodingTX(err)
-	}
-
-	//Validate
-	res = validateInvoiceCtx(expense.Ctx)
-	if res.IsErr() {
-		return res
-	}
-
-	//remove before editing, expense.ID will be empty if not editing
-	if len(expense.ID) > 0 {
-		invoices, err := getListInvoice(store)
-		if err != nil {
-			return abciErrGetInvoices
-		}
-		found := false
-		for i, v := range invoices {
-			if bytes.Compare(v, expense.ID) == 0 {
-				invoices = append(invoices[:i], invoices[i+1:]...)
-				found = true
-				break
-			}
-		}
-		if found {
-			store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
-		} else {
-			return abciErrInvoiceMissing
-		}
-	}
-
-	//Set the id, then validate a bit more
-	expense.SetID()
-
-	if _, err := getProfile(store, expense.Ctx.Sender); err != nil {
-		return abciErrNoSender
-	}
-	if _, err := getProfile(store, expense.Ctx.Receiver); err != nil {
-		return abciErrNoReceiver
-	}
-
-	//Return if the invoice already exists, aka no error was thrown
-	if _, err := getInvoice(store, expense.ID); err != nil {
-		return abciErrDupInvoice
-	}
-
-	//Store expense
-	store.Set(InvoiceKey(expense.ID), wire.BinaryBytes(expense))
-	return abci.OK
-}
-
-func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, invoice types.Invoice) (res abci.Result) {
-
-	// Decode tx
-	err := wire.ReadBinaryBytes(txBytes, invoice)
-	if err != nil {
-		return abciErrDecodingTX(err)
-	}
+	invoice := *reader
 
 	//Validate
 	res = validateInvoiceCtx(invoice.GetCtx())
@@ -165,12 +46,13 @@ func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, 
 		return res
 	}
 
+	invoices, err := getListInvoice(store)
+	if err != nil {
+		return abciErrGetInvoices
+	}
+
 	//remove before editing, invoice.ID will be empty if not editing
 	if len(invoice.GetID()) > 0 {
-		invoices, err := getListInvoice(store)
-		if err != nil {
-			return abciErrGetInvoices
-		}
 		found := false
 		for i, v := range invoices {
 			if bytes.Compare(v, invoice.GetID()) == 0 {
@@ -197,12 +79,19 @@ func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, 
 	}
 
 	//Return if the invoice already exists, aka no error was thrown
-	if _, err := getInvoice(store, invoice.GetID()); err != nil {
+	_, err = getInvoice(store, invoice.GetID())
+	if shouldExist && err != nil {
+		return abciErrInvoiceMissing
+	}
+	if !shouldExist && err == nil {
 		return abciErrDupInvoice
 	}
 
 	//Store invoice
 	store.Set(InvoiceKey(invoice.GetID()), wire.BinaryBytes(invoice))
+
+	invoices = append(invoices, invoice.GetID())
+	store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
 	return abci.OK
 }
 

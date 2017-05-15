@@ -60,7 +60,7 @@ var invoiceMapper = data.NewMapper(struct{ Invoice }{}).
 	RegisterImplementation(&Wage{}, "wage", 0x01).
 	RegisterImplementation(&Expense{}, "expense", 0x02)
 
-var _ Invoice = &Wage{}
+var _ Invoice = new(Wage)
 var _ Invoice = new(Expense)
 
 type Wage struct {

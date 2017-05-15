@@ -52,13 +52,14 @@ func (inv *Invoicer) RunTx(store btypes.KVStore, ctx btypes.CallContext, txBytes
 		return runTxProfile(store, ctx, txBytes[1:], true, writeProfile)
 	case types.TBTxProfileClose:
 		return runTxProfile(store, ctx, txBytes[1:], true, removeProfile)
-	case types.TBTxWageOpen,
-		types.TBTxWageEdit:
-		//return runTxInvoice(store, ctx, txBytes[1:], new(types.Wage))
-		return runTxWage(store, ctx, txBytes[1:])
-	case types.TBTxExpenseOpen,
-		types.TBTxExpenseEdit:
-		return runTxInvoice(store, ctx, txBytes[1:], new(types.Expense))
+	case types.TBTxWageOpen:
+		return runTxInvoice(store, ctx, txBytes[1:], false)
+	case types.TBTxWageEdit:
+		return runTxInvoice(store, ctx, txBytes[1:], true)
+	case types.TBTxExpenseOpen:
+		return runTxInvoice(store, ctx, txBytes[1:], false)
+	case types.TBTxExpenseEdit:
+		return runTxInvoice(store, ctx, txBytes[1:], true)
 	case types.TBTxCloseInvoice:
 		return runTxCloseInvoice(store, ctx, txBytes[1:])
 	case types.TBTxBulkImport:

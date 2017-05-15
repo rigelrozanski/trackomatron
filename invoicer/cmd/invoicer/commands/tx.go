@@ -290,7 +290,7 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) error {
 	}
 
 	//txBytes := invoice.TxBytesOpen()
-	txBytes := types.TxBytes(invoice, txTB)
+	txBytes := types.TxBytes(struct{ types.Invoice }{invoice}, txTB)
 	return bcmd.AppTx(invoicer.Name, txBytes)
 }
 
