@@ -164,7 +164,6 @@ func profileCmd(args []string, TxTB byte) error {
 	)
 
 	txBytes := types.TxBytes(*profile, TxTB)
-
 	return bcmd.AppTx(invoicer.Name, txBytes)
 }
 
@@ -186,7 +185,7 @@ func expenseEditCmd(cmd *cobra.Command, args []string) error {
 
 func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) error {
 	if len(args) != 2 {
-		return fmt.Errorf("Command requires two arguments ([sender][amount])") //never stack trace
+		return fmt.Errorf("Command requires two arguments ([sender][<amt><cur>])") //never stack trace
 	}
 	sender := args[0]
 	amountStr := args[1]
@@ -242,7 +241,8 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) error {
 		if err != nil {
 			return err
 		}
-	} else if txTB == types.TBTxWageEdit { //require this flag if
+	} else if txTB == types.TBTxWageEdit || //require this flag if
+		txTB == types.TBTxExpenseEdit { //require this flag if
 		errors.New("need the id to edit, please specify through the flag --id")
 	}
 
@@ -262,13 +262,17 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) error {
 			dueDate,
 		)
 	case types.TBTxExpenseOpen, types.TBTxExpenseEdit:
+		if len(viper.GetString(FlagTaxesPaid)) == 0 {
+			return errors.New("need --taxes flag")
+		}
+
 		taxes, err := types.ParseAmtCurTime(viper.GetString(FlagTaxesPaid), date)
 		if err != nil {
 			return err
 		}
 		docBytes, err := ioutil.ReadFile(viper.GetString(FlagReceipt))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Problem reading receipt file")
 		}
 
 		_, filename := path.Split(viper.GetString(FlagReceipt))
@@ -320,6 +324,7 @@ func closeInvoiceCmd(cmd *cobra.Command, args []string) error {
 		viper.GetString(FlagTransactionID),
 		act,
 	)
-	txBytes := closeInvoice.TxBytes()
+	//txBytes := closeInvoice.TxBytes()
+	txBytes := types.TxBytes(*closeInvoice, types.TBTxCloseInvoice)
 	return bcmd.AppTx(invoicer.Name, txBytes)
 }

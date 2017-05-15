@@ -50,16 +50,20 @@ func NewProfile(Name string, AcceptedCur string, DepositInfo string,
 	}
 }
 
+//////////////////////////////////////////////////////////////////////
+
 type Invoice interface {
 	SetID()
 	GetID() []byte
 	GetCtx() Context
+	Close(close *CloseInvoice)
 }
 
 var invoiceMapper = data.NewMapper(struct{ Invoice }{}).
 	RegisterImplementation(&Wage{}, "wage", 0x01).
 	RegisterImplementation(&Expense{}, "expense", 0x02)
 
+//for checking errors at compile time
 var _ Invoice = new(Wage)
 var _ Invoice = new(Expense)
 
@@ -113,6 +117,11 @@ func (w *Wage) GetCtx() Context {
 	return w.Ctx
 }
 
+func (w *Wage) Close(close *CloseInvoice) {
+	w.TransactionID = close.TransactionID
+	w.PaymentCurTime = close.PaymentCurTime
+}
+
 type Expense struct {
 	Ctx            Context
 	ID             []byte
@@ -159,6 +168,13 @@ func (e *Expense) GetCtx() Context {
 	return e.Ctx
 }
 
+func (e *Expense) Close(close *CloseInvoice) {
+	e.TransactionID = close.TransactionID
+	e.PaymentCurTime = close.PaymentCurTime
+}
+
+/////////////////////////////////////////////////////////////////////////
+
 type CloseInvoice struct {
 	ID             []byte
 	TransactionID  string      //empty when unpaid
@@ -172,8 +188,4 @@ func NewCloseInvoice(ID []byte, TransactionID string, PaymentCurTime *AmtCurTime
 		PaymentCurTime: PaymentCurTime,
 	}
 
-}
-
-func (c *CloseInvoice) TxBytes() []byte {
-	return TxBytes(c, TBTxCloseInvoice)
 }

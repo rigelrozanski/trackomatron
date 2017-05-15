@@ -113,22 +113,13 @@ func runTxCloseInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []b
 	}
 
 	//actually write the changes
-	switch close.ID[0] {
-	case types.TBIDExpense:
-		expense, err := getInvoice(store, close.ID)
-		if err != nil {
-			return abci.ErrInternalError.AppendLog("Expense ID is missing from existing expense")
-		}
-		store.Set(InvoiceKey(close.ID), wire.BinaryBytes(expense))
-	case types.TBIDWage:
-		invoice, err := getInvoice(store, close.ID)
-		if err != nil {
-			return abci.ErrInternalError.AppendLog("Wage ID is missing from existing wage")
-		}
-		store.Set(InvoiceKey(close.ID), wire.BinaryBytes(invoice))
-	default:
-		return abci.ErrInternalError.AppendLog("ID Typebyte neither invoice nor expense")
+	invoice, err := getInvoice(store, close.ID)
+	if err != nil {
+		return abciErrInvoiceMissing
 	}
+	invoice.Close(close)
+
+	store.Set(InvoiceKey(invoice.GetID()), wire.BinaryBytes(invoice))
 
 	return abci.OK
 }
