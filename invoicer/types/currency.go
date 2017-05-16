@@ -1,23 +1,21 @@
 package types
 
 import (
-	"fmt"
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
-type CurTime struct {
+type CurrencyTime struct {
 	Cur  string
 	Date time.Time
 }
 
 type AmtCurTime struct {
-	Cur    CurTime
-	Amount string //Decimal Number
+	CurTime CurrencyTime
+	Amount  string //Decimal Number
 }
 
 func ParseAmtCurTime(amtCur string, date time.Time) (*AmtCurTime, error) {
@@ -31,39 +29,109 @@ func ParseAmtCurTime(amtCur string, date time.Time) (*AmtCurTime, error) {
 	amt := reAmt.FindString(amtCur)
 	cur := reCur.FindString(amtCur)
 
-	return &AmtCurTime{CurTime{cur, date}, amt}, nil
+	return &AmtCurTime{CurrencyTime{cur, date}, amt}, nil
 }
 
-func ParseDate(date string, timezone string) (t time.Time, err error) {
-
-	//get the time of invoice
-	t = time.Now()
-	if len(timezone) > 0 {
-
-		tz := time.UTC
-		if len(timezone) > 0 {
-			tz, err = time.LoadLocation(timezone)
-			if err != nil {
-				return t, fmt.Errorf("error loading timezone, error: ", err) //never stack trace
-			}
+func (a *AmtCurTime) Add(a2 *AmtCurTime) (*AmtCurTime, error) {
+	switch {
+	case a == nil && a2 != nil:
+		return a2, nil
+	case a != nil && a2 == nil:
+		return a, nil
+	case a != nil && a2 != nil:
+		amt1, amt2, err := getDecimals(a, a2)
+		if err != nil {
+			return nil, err
 		}
+		return &AmtCurTime{CurrencyTime{a.CurTime.Cur, a.CurTime.Date}, amt1.Add(amt2).String()}, nil
+	case a == nil && a2 == nil:
+		return nil, nil
+	}
+	return nil, nil //never called
+}
 
-		str := strings.Split(date, "-")
-		var ymd = []int{}
-		for _, i := range str {
-			j, err := strconv.Atoi(i)
-			if err != nil {
-				return t, err
-			}
-			ymd = append(ymd, j)
+func (a *AmtCurTime) Minus(a2 *AmtCurTime) (*AmtCurTime, error) {
+	switch {
+	case a == nil && a2 != nil:
+		return nil, errors.New("a is nil")
+	case a != nil && a2 == nil:
+		return a, nil
+	case a != nil && a2 != nil:
+		amt1, amt2, err := getDecimals(a, a2)
+		if err != nil {
+			return nil, err
 		}
-		if len(ymd) != 3 {
-			return t, fmt.Errorf("bad date parsing, not 3 segments") //never stack trace
-		}
+		return &AmtCurTime{CurrencyTime{a.CurTime.Cur, a.CurTime.Date}, amt1.Sub(amt2).String()}, nil
+	case a == nil && a2 == nil:
+		return nil, errors.New("a is nil")
+	}
+	return nil, nil //never called
+}
 
-		t = time.Date(ymd[0], time.Month(ymd[1]), ymd[2], 0, 0, 0, 0, tz)
+func (a *AmtCurTime) EQ(a2 *AmtCurTime) (bool, error) {
+	amt1, amt2, err := getDecimals(a, a2)
+	if err != nil {
+		return false, err
+	}
+	return amt1.Equal(amt2), nil
+}
 
+func (a *AmtCurTime) GT(a2 *AmtCurTime) (bool, error) {
+	amt1, amt2, err := getDecimals(a, a2)
+	if err != nil {
+		return false, err
+	}
+	return amt1.GreaterThan(amt2), nil
+}
+
+func (a *AmtCurTime) GTE(a2 *AmtCurTime) (bool, error) {
+	amt1, amt2, err := getDecimals(a, a2)
+	if err != nil {
+		return false, err
+	}
+	return amt1.GreaterThanOrEqual(amt2), nil
+}
+
+func (a *AmtCurTime) LT(a2 *AmtCurTime) (bool, error) {
+	amt1, amt2, err := getDecimals(a, a2)
+	if err != nil {
+		return false, err
+	}
+	return amt1.LessThan(amt2), nil
+}
+
+func (a *AmtCurTime) LTE(a2 *AmtCurTime) (bool, error) {
+	amt1, amt2, err := getDecimals(a, a2)
+	if err != nil {
+		return false, err
+	}
+	return amt1.LessThanOrEqual(amt2), nil
+}
+
+func getDecimals(a1 *AmtCurTime, a2 *AmtCurTime) (amt1 decimal.Decimal, amt2 decimal.Decimal, err error) {
+
+	if a1 == nil {
+		return amt1, amt2, errors.New("input a1 is nil")
+	}
+	if a2 == nil {
+		return amt1, amt2, errors.New("input a2 is nil")
 	}
 
-	return t, nil
+	amt1, err = decimal.NewFromString(a1.Amount)
+	if err != nil {
+		return
+	}
+	amt2, err = decimal.NewFromString(a2.Amount)
+	if err != nil {
+		return
+	}
+	err = a1.validateOperation(a2)
+	return
+}
+
+func (a *AmtCurTime) validateOperation(a2 *AmtCurTime) error {
+	if a.CurTime.Cur != a2.CurTime.Cur {
+		return errors.New("Can't operate on two different currencies")
+	}
+	return nil
 }

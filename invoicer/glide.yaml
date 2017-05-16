@@ -9,7 +9,7 @@ import:
   subpackages:
   - types
 - package: github.com/tendermint/basecoin
-  version: develop
+  version: txsize
   subpackages:
   - cmd/commands
   - state
@@ -19,7 +19,7 @@ import:
 - package: github.com/tendermint/tendermint
   version: logging-arch-proposal
 - package: github.com/tendermint/tmlibs
-  version: log
+  version: stderr
   subpackages:
   - common
   - merkle

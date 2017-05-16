@@ -12,7 +12,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/shopspring/decimal
-  version: 3526cd0bdb7f64e1178943b7dee81a0cc3d86a69
+  version: 16a941821474ee3986fdbeab535a68a8aa5a85d2
 - name: github.com/tendermint/basecoin
   version: 354ea8ffd792d70320d3a93286bdd6f23e57ec6f
   subpackages:

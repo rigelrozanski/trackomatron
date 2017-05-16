@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/basecoin-examples/invoicer/types"
 )
 
-func validateInvoiceCtx(ctx types.Context) abci.Result {
+func validateInvoiceCtx(ctx *types.Context) abci.Result {
 	//Validate Tx
 	switch {
 	case len(ctx.Sender) == 0:
@@ -20,7 +20,7 @@ func validateInvoiceCtx(ctx types.Context) abci.Result {
 		return abci.ErrInternalError.AppendLog("invoice must have a receiver")
 	case len(ctx.AcceptedCur) == 0:
 		return abci.ErrInternalError.AppendLog("invoice must have an accepted currency")
-	case ctx.Amount == nil:
+	case ctx.Payable == nil:
 		return abci.ErrInternalError.AppendLog("invoice amount is nil")
 	case ctx.Due.Before(time.Now()):
 		return abci.ErrInternalError.AppendLog("cannot issue overdue invoice")
@@ -31,7 +31,7 @@ func validateInvoiceCtx(ctx types.Context) abci.Result {
 
 func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, shouldExist bool) (res abci.Result) {
 
-	// Decode tx
+	// Decode the new invoice from cli
 	var reader = new(types.Invoice)
 	err := wire.ReadBinaryBytes(txBytes, reader)
 	if err != nil {
@@ -45,30 +45,43 @@ func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, 
 		return res
 	}
 
-	invoices, err := getListInvoice(store)
+	invoices, err := getListBytes(store, ListInvoiceKey())
 	if err != nil {
 		return abciErrGetInvoices
 	}
 
-	//remove before editing, invoice.ID will be empty if not editing
+	//Remove before editing, invoice.ID will be empty if not editing
 	if len(invoice.GetID()) > 0 {
 		found := false
+
 		for i, v := range invoices {
 			if bytes.Compare(v, invoice.GetID()) == 0 {
+
+				//Can only edit if the current invoice is still open
+				storeInvoice, err := getInvoice(store, v)
+				if err != nil {
+					return abciErrInvoiceClosed
+				}
+				if !storeInvoice.GetCtx().Open {
+					return abciErrInvoiceClosed
+				}
+
 				invoices = append(invoices[:i], invoices[i+1:]...)
 				found = true
 				break
 			}
 		}
-		if found {
-			store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
-		} else {
+		if !found {
 			return abciErrInvoiceMissing
 		}
+
+		store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
 	}
 
-	//Set the id, then validate a bit more
-	invoice.SetID()
+	//Set the id if it doesn't yet exist
+	if len(invoice.GetID()) == 0 {
+		invoice.SetID()
+	}
 
 	if _, err := getProfile(store, invoice.GetCtx().Sender); err != nil {
 		return abciErrNoSender
@@ -92,38 +105,4 @@ func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, 
 	invoices = append(invoices, invoice.GetID())
 	store.Set(ListInvoiceKey(), wire.BinaryBytes(invoices))
 	return abci.OK
-}
-
-func runTxCloseInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte) (res abci.Result) {
-
-	// Decode tx
-	var close = new(types.CloseInvoice)
-	err := wire.ReadBinaryBytes(txBytes, close)
-	if err != nil {
-		return abciErrDecodingTX(err)
-	}
-
-	//Validate Tx
-	switch {
-	case len(close.ID) == 0:
-		return abci.ErrInternalError.AppendLog("closer doesn't have an ID")
-	case len(close.TransactionID) == 0:
-		return abci.ErrInternalError.AppendLog("closer must include a transaction ID")
-	}
-
-	//actually write the changes
-	invoice, err := getInvoice(store, close.ID)
-	if err != nil {
-		return abciErrInvoiceMissing
-	}
-	invoice.Close(close)
-
-	store.Set(InvoiceKey(invoice.GetID()), wire.BinaryBytes(invoice))
-
-	return abci.OK
-}
-
-//TODO add JSON imports
-func runTxBulkImport(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte) (res abci.Result) {
-	return abci.OK //TODO add functionality
 }

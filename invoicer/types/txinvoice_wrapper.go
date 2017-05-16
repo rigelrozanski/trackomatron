@@ -46,10 +46,10 @@ func (h Invoice) Empty() bool {
 /*** below are bindings for each implementation ***/
 
 func init() {
-	InvoiceMapper.RegisterImplementation(&Wage{}, "wage", 0x1)
+	InvoiceMapper.RegisterImplementation(&Contract{}, "contract", 0x1)
 }
 
-func (hi *Wage) Wrap() Invoice {
+func (hi *Contract) Wrap() Invoice {
 	return Invoice{hi}
 }
 

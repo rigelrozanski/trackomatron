@@ -3,26 +3,15 @@ package types
 import (
 	"time"
 
+	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/go-wire"
 	"github.com/tendermint/tmlibs/merkle"
 )
 
 const (
 	TBIDExpense = iota
-	TBIDWage
-
-	TBTxProfileOpen
-	TBTxProfileEdit
-	TBTxProfileClose
-
-	TBTxWageOpen
-	TBTxWageEdit
-
-	TBTxExpenseOpen
-	TBTxExpenseEdit
-
-	TBTxCloseInvoice
-	TBTxBulkImport
+	TBIDContract
+	TBIDPayment
 )
 
 func TxBytes(object interface{}, tb byte) []byte {
@@ -31,47 +20,42 @@ func TxBytes(object interface{}, tb byte) []byte {
 }
 
 type Profile struct {
-	Name            string        //identifier for querying
-	AcceptedCur     string        //currency you will accept payment in
-	DepositInfo     string        //default deposit information (mostly for fiat)
-	DueDurationDays int           //default duration until a sent invoice due date
-	Timezone        time.Location //default duration until a sent invoice due date
+	Address         bcmd.Address //identifier for querying
+	Name            string       //identifier for querying
+	AcceptedCur     string       //currency you will accept payment in
+	DepositInfo     string       //default deposit information (mostly for fiat)
+	DueDurationDays int          //default duration until a sent invoice due date
+	Active          bool         //default duration until a sent invoice due date
 }
 
-func NewProfile(Name string, AcceptedCur string, DepositInfo string,
-	DueDurationDays int, Timezone time.Location) *Profile {
+func NewProfile(Address bcmd.Address, Name, AcceptedCur, DepositInfo string,
+	DueDurationDays int) *Profile {
 	return &Profile{
+		Address:         Address,
 		Name:            Name,
 		AcceptedCur:     AcceptedCur,
 		DepositInfo:     DepositInfo,
 		DueDurationDays: DueDurationDays,
-		Timezone:        Timezone,
+		Active:          true,
 	}
 }
 
 //////////////////////////////////////////////////////////////////////
 
-// +gen holder:"Invoice,Impl[*Wage,*Expense]"
+// +gen holder:"Invoice,Impl[*Contract,*Expense]"
 type InvoiceInner interface {
 	SetID()
 	GetID() []byte
-	GetCtx() Context
-	Close(close *CloseInvoice)
+	GetCtx() *Context
 }
 
-//var invoiceMapper = data.NewMapper(struct{ Invoice }{}).
-//RegisterImplementation(&Wage{}, "wage", 0x01).
-//RegisterImplementation(&Expense{}, "expense", 0x02)
-
 //for checking errors at compile time
-//var _ Invoice = new(Wage)
-//var _ Invoice = new(Expense)
+var _ InvoiceInner = new(Contract)
+var _ InvoiceInner = new(Expense)
 
-type Wage struct {
-	Ctx            Context
-	ID             []byte
-	TransactionID  string      //empty when unpaid
-	PaymentCurTime *AmtCurTime //currency used to pay invoice, empty when unpaid
+type Contract struct {
+	ID  []byte
+	Ctx *Context
 }
 
 //struct used for hash to determine ID
@@ -80,78 +64,109 @@ type Context struct {
 	Receiver    string
 	DepositInfo string
 	Notes       string
-	Amount      *AmtCurTime
 	AcceptedCur string
 	Due         time.Time
+
+	Open     bool        //Is this invoice open
+	Invoiced *AmtCurTime //Amount Invoiced (likely fiat)
+	Payable  *AmtCurTime //Payable Amount (likely crypto)
+	Paid     *AmtCurTime //Amount Paid towards this invoice
 }
 
-func NewWage(ID []byte, Sender, Receiver, DepositInfo, Notes string,
-	Amount *AmtCurTime, AcceptedCur string, Due time.Time) *Wage {
+func (c *Context) Unpaid() (*AmtCurTime, error) {
+	return c.Payable.Minus(c.Paid)
+}
 
-	return &Wage{
-		Ctx: Context{
+//This function will make the maximum payment to the invoice from the fund
+//funds should be reduced from the the fund and returned throught the pointer
+func (c *Context) Pay(fund *AmtCurTime) error {
+	unpaid, err := c.Unpaid()
+	if err != nil {
+		return err
+	}
+	gte, err := fund.GTE(unpaid)
+	if err != nil {
+		return err
+	}
+	if gte {
+		c.Paid = c.Payable
+		c.Open = false
+		fund, err = fund.Minus(c.Payable)
+		if err != nil {
+			return err
+		}
+	} else {
+		//TODO better way of duplicating value of fund here
+		c.Paid = &AmtCurTime{CurrencyTime{fund.CurTime.Cur, fund.CurTime.Date}, fund.Amount}
+		fund.Amount = "0" //empty the fund
+	}
+	return nil
+}
+
+func NewContract(ID []byte, Sender, Receiver, DepositInfo, Notes string,
+	AcceptedCur string, Due time.Time, Amount, Payable *AmtCurTime) *Contract {
+
+	return &Contract{
+		ID: ID,
+		Ctx: &Context{
 			Sender:      Sender,
 			Receiver:    Receiver,
 			DepositInfo: DepositInfo,
 			Notes:       Notes,
-			Amount:      Amount,
 			AcceptedCur: AcceptedCur,
 			Due:         Due,
+
+			Open:     true,
+			Invoiced: Amount,
+			Payable:  Payable,
+			Paid:     nil,
 		},
-		ID:             ID,
-		TransactionID:  "",
-		PaymentCurTime: nil,
 	}
 }
 
-func (w *Wage) SetID() {
+func (w *Contract) SetID() {
 	hashBytes := merkle.SimpleHashFromBinary(w.Ctx)
-	w.ID = append([]byte{TBIDWage}, hashBytes...)
+	w.ID = append([]byte{TBIDContract}, hashBytes...)
 }
 
-func (w *Wage) GetID() []byte {
+func (w *Contract) GetID() []byte {
 	return w.ID
 }
 
-func (w *Wage) GetCtx() Context {
+func (w *Contract) GetCtx() *Context {
 	return w.Ctx
 }
 
-func (w *Wage) Close(close *CloseInvoice) {
-	w.TransactionID = close.TransactionID
-	w.PaymentCurTime = close.PaymentCurTime
-}
-
 type Expense struct {
-	Ctx            Context
-	ID             []byte
-	Document       []byte
-	DocFileName    string
-	ExpenseTaxes   *AmtCurTime
-	TransactionID  string      //empty when unpaid
-	PaymentCurTime *AmtCurTime //currency used to pay invoice, empty when unpaid
+	ID           []byte
+	Ctx          *Context
+	Document     []byte
+	DocFileName  string
+	ExpenseTaxes *AmtCurTime
 }
 
 func NewExpense(ID []byte, Sender, Receiver, DepositInfo, Notes string,
-	Amount *AmtCurTime, AcceptedCur string, Due time.Time,
+	AcceptedCur string, Due time.Time, Amount, Payable *AmtCurTime,
 	Document []byte, DocFileName string, ExpenseTaxes *AmtCurTime) *Expense {
 
 	return &Expense{
-		Ctx: Context{
+		ID: ID,
+		Ctx: &Context{
 			Sender:      Sender,
 			Receiver:    Receiver,
 			DepositInfo: DepositInfo,
 			Notes:       Notes,
-			Amount:      Amount,
 			AcceptedCur: AcceptedCur,
 			Due:         Due,
+
+			Open:     true,
+			Invoiced: Amount,
+			Payable:  Payable,
+			Paid:     nil,
 		},
-		ID:             ID,
-		Document:       Document,
-		DocFileName:    DocFileName,
-		ExpenseTaxes:   ExpenseTaxes,
-		TransactionID:  "",
-		PaymentCurTime: nil,
+		Document:     Document,
+		DocFileName:  DocFileName,
+		ExpenseTaxes: ExpenseTaxes,
 	}
 }
 
@@ -164,27 +179,32 @@ func (e *Expense) GetID() []byte {
 	return e.ID
 }
 
-func (e *Expense) GetCtx() Context {
+func (e *Expense) GetCtx() *Context {
 	return e.Ctx
-}
-
-func (e *Expense) Close(close *CloseInvoice) {
-	e.TransactionID = close.TransactionID
-	e.PaymentCurTime = close.PaymentCurTime
 }
 
 /////////////////////////////////////////////////////////////////////////
 
-type CloseInvoice struct {
-	ID             []byte
-	TransactionID  string      //empty when unpaid
-	PaymentCurTime *AmtCurTime //currency used to pay invoice, empty when unpaid
+type Payment struct {
+	TransactionID  string
+	InvoiceIDs     [][]byte //List of ID's to close with transaction
+	Sender         string   //Intended sender profile name of the payment
+	Receiver       string   //Intended receiver profile name of the payment
+	PaymentCurTime *AmtCurTime
+	StartDate      *time.Time //Optional start date of payments to query for
+	EndDate        *time.Time //Optional end date of payments to query
 }
 
-func NewCloseInvoice(ID []byte, TransactionID string, PaymentCurTime *AmtCurTime) *CloseInvoice {
-	return &CloseInvoice{
-		ID:             ID,
+func NewPayment(InvoiceIDs [][]byte, TransactionID, Sender, Receiver string,
+	PaymentCurTime *AmtCurTime, StartDate, EndDate *time.Time) *Payment {
+
+	return &Payment{
 		TransactionID:  TransactionID,
+		InvoiceIDs:     InvoiceIDs,
+		Sender:         Sender,
+		Receiver:       Receiver,
 		PaymentCurTime: PaymentCurTime,
+		StartDate:      StartDate,
+		EndDate:        EndDate,
 	}
 }

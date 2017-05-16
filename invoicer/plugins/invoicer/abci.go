@@ -4,8 +4,6 @@ import (
 	abci "github.com/tendermint/abci/types"
 	"github.com/tendermint/basecoin/state"
 	btypes "github.com/tendermint/basecoin/types"
-
-	"github.com/tendermint/basecoin-examples/invoicer/types"
 )
 
 const Name = "invoicer"
@@ -46,24 +44,22 @@ func (inv *Invoicer) RunTx(store btypes.KVStore, ctx btypes.CallContext, txBytes
 
 	//Note that the zero position of txBytes contains the type-byte for the tx type
 	switch txBytes[0] {
-	case types.TBTxProfileOpen:
+	case TBTxProfileOpen:
 		return runTxProfile(store, ctx, txBytes[1:], false, writeProfile)
-	case types.TBTxProfileEdit:
+	case TBTxProfileEdit:
 		return runTxProfile(store, ctx, txBytes[1:], true, writeProfile)
-	case types.TBTxProfileClose:
-		return runTxProfile(store, ctx, txBytes[1:], true, removeProfile)
-	case types.TBTxWageOpen:
+	case TBTxProfileDeactivate:
+		return runTxProfile(store, ctx, txBytes[1:], true, deactivateProfile)
+	case TBTxContractOpen:
 		return runTxInvoice(store, ctx, txBytes[1:], false)
-	case types.TBTxWageEdit:
+	case TBTxContractEdit:
 		return runTxInvoice(store, ctx, txBytes[1:], true)
-	case types.TBTxExpenseOpen:
+	case TBTxExpenseOpen:
 		return runTxInvoice(store, ctx, txBytes[1:], false)
-	case types.TBTxExpenseEdit:
+	case TBTxExpenseEdit:
 		return runTxInvoice(store, ctx, txBytes[1:], true)
-	case types.TBTxCloseInvoice:
-		return runTxCloseInvoice(store, ctx, txBytes[1:])
-	case types.TBTxBulkImport:
-		return runTxBulkImport(store, ctx, txBytes[1:])
+	case TBTxPayment:
+		return runTxPayment(store, ctx, txBytes[1:])
 	default:
 		return abci.ErrBaseEncodingError.AppendLog("Error decoding tx: bad prepended bytes")
 	}

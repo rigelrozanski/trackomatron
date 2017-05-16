@@ -2,6 +2,7 @@ package invoicer
 
 import (
 	abci "github.com/tendermint/abci/types"
+	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	btypes "github.com/tendermint/basecoin/types"
 	wire "github.com/tendermint/go-wire"
 
@@ -16,37 +17,71 @@ func validateProfile(profile *types.Profile) abci.Result {
 		return abci.ErrInternalError.AppendLog("new profile must have an accepted currency")
 	case profile.DueDurationDays < 0:
 		return abci.ErrInternalError.AppendLog("new profile due duration must be non-negative")
+	case !profile.Active:
+		return abciErrProfileInactive
 	default:
 		return abci.OK
 	}
 }
 
-func writeProfile(store btypes.KVStore, active []string, profile *types.Profile) {
+func writeProfile(store btypes.KVStore, active []string, profile *types.Profile) abci.Result {
 
+	//Validate Tx
+	res := validateProfile(profile)
+	if res.IsErr() {
+		return res
+	}
+
+	//write the profile to the profile key
 	store.Set(ProfileKey(profile.Name), wire.BinaryBytes(*profile))
 
-	//also add it to the list of open profiles
+	//add the profile name to the list of active profiles
 	active = append(active, profile.Name)
-	store.Set(ListProfileKey(), wire.BinaryBytes(active))
+	store.Set(ListProfileActiveKey(), wire.BinaryBytes(active))
+
+	return abci.OK
 }
 
-func removeProfile(store btypes.KVStore, active []string, profile *types.Profile) {
+func deactivateProfile(store btypes.KVStore, active []string, profile *types.Profile) abci.Result {
 
-	//TODO remove profile, can't delete store entry on current KVstore implementation
-	store.Set(ProfileKey(profile.Name), nil)
+	name := profile.Name
 
-	//remove from the active profile list
-	for i, v := range active {
-		if v == profile.Name {
-			active = append(active[:i], active[i+1:]...)
-			break
+	//get the original profile that's saved from the store, set that one to inactive
+	storeProfile, err := getProfile(store, name)
+	if err != nil {
+		return abciErrNoProfile
+	}
+
+	storeProfile.Active = false
+	store.Set(ProfileKey(name), wire.BinaryBytes(storeProfile))
+
+	//remove profile from the list of active profiles
+	active = removeElemStringArray(active, name)
+	store.Set(ListProfileActiveKey(), wire.BinaryBytes(active))
+
+	//Add the profile name to the list of inactive profiles
+	all, err := getListString(store, ListProfileActiveKey())
+	if err != nil {
+		return abciErrGetAllProfiles
+	}
+	all = append(all, name)
+	store.Set(ListProfileInactiveKey(), wire.BinaryBytes(all))
+
+	return abci.OK
+}
+
+//TODO move to tmlibs/common
+func removeElemStringArray(a []string, remove string) []string {
+	for i, el := range a {
+		if el == remove {
+			a = append(a[:i], a[i+1:]...)
 		}
 	}
-	store.Set(ListProfileKey(), wire.BinaryBytes(active))
+	return a
 }
 
 //TODO remove this once replaced KVStore functionality
-func profileIsActive(active []string, name string) bool {
+func profileRegistered(active []string, name string) bool {
 	for _, p := range active {
 		if p == name {
 			return true
@@ -55,8 +90,18 @@ func profileIsActive(active []string, name string) bool {
 	return false
 }
 
+func nameFromAddress(store btypes.KVStore, active []string, address bcmd.Address) string {
+	for _, name := range active {
+		profile, _ := getProfile(store, name)
+		if profile.Address == address {
+			return profile.Name
+		}
+	}
+	return ""
+}
+
 func runTxProfile(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, shouldExist bool,
-	action func(store btypes.KVStore, active []string, profile *types.Profile)) (res abci.Result) {
+	action func(store btypes.KVStore, active []string, profile *types.Profile) abci.Result) abci.Result {
 
 	// Decode tx
 	var profile = new(types.Profile)
@@ -65,24 +110,22 @@ func runTxProfile(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, 
 		return abciErrDecodingTX(err)
 	}
 
-	//Check existence
-	active, err := getListProfile(store)
+	//get the name from address, if not opening a new profile
+	active, err := getListString(store, ListProfileActiveKey())
 	if err != nil {
 		return abciErrGetProfiles
 	}
-	if shouldExist && !profileIsActive(active, profile.Name) {
+	if len(profile.Name) == 0 {
+		profile.Name = nameFromAddress(store, active, profile.Address)
+	}
+
+	//Check existence
+	if shouldExist && !profileRegistered(active, profile.Name) {
 		return abciErrProfileNonExistent
 	}
-	if !shouldExist && profileIsActive(active, profile.Name) {
+	if !shouldExist && profileRegistered(active, profile.Name) {
 		return abciErrProfileExists
 	}
 
-	//Validate Tx
-	res = validateProfile(profile)
-	if res.IsErr() {
-		return res
-	}
-
-	action(store, active, profile)
-	return abci.OK
+	return action(store, active, profile)
 }

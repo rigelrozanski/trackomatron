@@ -18,6 +18,7 @@ func init() {
 	bcmd.GenesisJSON = `{
   "app_hash": "",
   "chain_id": "test_chain_id",
+  "max_tx": "10485760",
   "genesis_time": "0001-01-01T00:00:00.000Z",
   "validators": [
     {
