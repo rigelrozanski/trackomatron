@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/tendermint/basecoin-examples/invoicer/plugins/invoicer"
+	"github.com/tendermint/basecoin-examples/tracko/plugins/invoicer"
 	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	btypes "github.com/tendermint/basecoin/types"
 )
@@ -12,7 +12,7 @@ func init() {
 	bcmd.RegisterStartPlugin(invoicer.Name, func() btypes.Plugin { return invoicer.New() })
 
 	//Change the working directory
-	bcmd.DefaultHome = "." + invoicer.Name
+	bcmd.DefaultHome = ".tracko"
 
 	//Change the GenesisJSON
 	bcmd.GenesisJSON = `{

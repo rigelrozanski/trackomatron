@@ -5,7 +5,7 @@ import (
 	"github.com/tendermint/go-wire"
 	cmn "github.com/tendermint/tmlibs/common"
 
-	"github.com/tendermint/basecoin-examples/invoicer/types"
+	"github.com/tendermint/basecoin-examples/tracko/types"
 )
 
 const (

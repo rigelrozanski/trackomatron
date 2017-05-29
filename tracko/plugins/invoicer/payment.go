@@ -5,7 +5,7 @@ import (
 	"time"
 
 	abci "github.com/tendermint/abci/types"
-	types "github.com/tendermint/basecoin-examples/invoicer/types"
+	types "github.com/tendermint/basecoin-examples/tracko/types"
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
 )
@@ -113,7 +113,7 @@ func runTxPayment(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte) 
 	bal := payment.PaymentCurTime
 	for _, invoice := range invoices {
 		//pay the funds to the invoice, reduce funds from bal
-		err = invoice.GetCtx().Pay(bal)
+		bal, err = invoice.GetCtx().Pay(bal)
 		if err != nil {
 			return abci.ErrUnauthorized.AppendLog("Error paying invoice: " + err.Error())
 		}

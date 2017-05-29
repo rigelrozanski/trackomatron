@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
 	"os"
 	"path"
 
-	_ "github.com/tendermint/basecoin-examples/invoicer/cmd/invoicer/commands"
-	"github.com/tendermint/basecoin-examples/invoicer/plugins/invoicer"
+	"github.com/spf13/cobra"
+
+	_ "github.com/tendermint/basecoin-examples/tracko/cmd/tracko/commands"
 	"github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/tmlibs/cli"
 )
@@ -14,7 +14,7 @@ import (
 func main() {
 
 	var RootCmd = &cobra.Command{
-		Use: invoicer.Name,
+		Use: "tracko",
 	}
 
 	RootCmd.AddCommand(
@@ -33,7 +33,7 @@ func main() {
 	cmd := cli.PrepareMainCmd(
 		RootCmd,
 		"INV",
-		os.ExpandEnv(path.Join("$HOME", "."+invoicer.Name)),
+		os.ExpandEnv(path.Join("$HOME", ".tracko")),
 	)
 	cmd.Execute()
 }

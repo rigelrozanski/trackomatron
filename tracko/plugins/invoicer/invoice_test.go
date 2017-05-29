@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/basecoin-examples/invoicer/common"
-	"github.com/tendermint/basecoin-examples/invoicer/types"
+	"github.com/tendermint/basecoin-examples/tracko/common"
+	"github.com/tendermint/basecoin-examples/tracko/types"
 	wire "github.com/tendermint/go-wire"
 )
 
