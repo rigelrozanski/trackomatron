@@ -32,8 +32,9 @@ func (inv *Invoicer) RunTx(store btypes.KVStore, ctx btypes.CallContext, txBytes
 		//Return the ctx coins to the wallet if there is an error
 		if res.IsErr() {
 			acc := ctx.CallerAccount
-			acc.Balance = acc.Balance.Plus(ctx.Coins)       // add the context transaction coins
-			state.SetAccount(store, ctx.CallerAddress, acc) // save the new balance
+			acc.Balance = acc.Balance.Plus(ctx.Coins) // add the context transaction coins
+			state := state.NewState(store)
+			state.SetAccount(ctx.CallerAddress, acc) // save the new balance
 		}
 	}()
 

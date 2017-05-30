@@ -68,7 +68,7 @@ func init() {
 	fsInvoices := flag.NewFlagSet("", flag.ContinueOnError)
 	fsInvoices.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
 	fsInvoices.String(FlagType, "",
-		"limit the scope by using any of the following modifiers with commas: invoice,expense,paid,unpaid")
+		"limit the scope by using any of the following modifiers with commas: invoice,expense,open,closed")
 	fsInvoices.String(FlagDateRange, "",
 		"Query within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
 	fsInvoices.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
@@ -119,11 +119,16 @@ func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	jsonBytes, err := invoice.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
 	switch viper.GetString("output") {
 	case "text":
-		fmt.Println(string(wire.JSONBytes(invoice))) //TODO Actually make text
+		fmt.Println(string(jsonBytes)) //TODO Actually make text
 	case "json":
-		fmt.Println(string(wire.JSONBytes(invoice)))
+		fmt.Println(string(jsonBytes)) //TODO Actually make text
 	}
 
 	expense, isExpense := invoice.Unwrap().(*types.Expense)
@@ -177,29 +182,38 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 	froms, toes := processFlagFromTo()
 
 	ty := viper.GetString(FlagType)
-	contractFilt, expenseFilt, paidFilt, unpaidFilt := true, true, true, true
+	contractFilt, expenseFilt, openFilt, closedFilt := true, true, true, true
+
+	if viper.GetBool("debug") {
+		fmt.Printf("debug %v %v %v %v\n", len(ty), ty,
+			strings.Contains(ty, "open"), strings.Contains(ty, "closed"))
+	}
 	if len(ty) > 0 {
-		contractFilt, expenseFilt, paidFilt, unpaidFilt = false, false, false, false
+		contractFilt, expenseFilt, openFilt, closedFilt = false, false, false, false
 		if strings.Contains(ty, "contract") {
 			contractFilt = true
 		}
 		if strings.Contains(ty, "expense") {
 			expenseFilt = true
 		}
-		if strings.Contains(ty, "paid") {
-			paidFilt = true
+		if strings.Contains(ty, "open") {
+			openFilt = true
 		}
-		if strings.Contains(ty, "unpaid") {
-			unpaidFilt = true
+		if strings.Contains(ty, "closed") {
+			closedFilt = true
 		}
 
 		//if a whole catagory is missing, turn it on
 		if !contractFilt && !expenseFilt {
 			contractFilt, expenseFilt = true, true
 		}
-		if !paidFilt && !unpaidFilt {
-			paidFilt, unpaidFilt = true, true
+		if !openFilt && !closedFilt {
+			openFilt, closedFilt = true, true
 		}
+	}
+	if viper.GetBool("debug") {
+		fmt.Printf("debug filts %v %v %v %v\n", contractFilt,
+			expenseFilt, openFilt, closedFilt)
 	}
 
 	//get the date range to query
@@ -246,11 +260,18 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 		//check the type filter flags
 		expense, isExpense := invoice.Unwrap().(*types.Expense)
 		_, isContract := invoice.Unwrap().(*types.Contract)
-		if !((contractFilt && isContract) ||
-			(expenseFilt && isExpense)) ||
-			!((paidFilt && ctx.Open) ||
-				(unpaidFilt && !ctx.Open)) {
 
+		if viper.GetBool("debug") {
+			fmt.Printf("debug %v %v %v %v %v\n", isContract, isExpense, ctx.Open, openFilt, closedFilt)
+		}
+		switch {
+		case isContract && !contractFilt && expenseFilt:
+			continue
+		case isExpense && contractFilt && !expenseFilt:
+			continue
+		case ctx.Open && !openFilt && closedFilt:
+			continue
+		case !ctx.Open && openFilt && !closedFilt:
 			continue
 		}
 
@@ -379,16 +400,16 @@ func queryPaymentCmd(cmd *cobra.Command, args []string) error {
 	//get the invoicer object and print it
 	//TODO Upgrade to viper once basecoin viper upgrade complete
 	tmAddr := cmd.Parent().Flag("node").Value.String()
-	invoice, err := queryPayment(tmAddr, transactionID)
+	payment, err := queryPayment(tmAddr, transactionID)
 	if err != nil {
 		return err
 	}
 
 	switch viper.GetString("output") {
 	case "text":
-		fmt.Println(string(wire.JSONBytes(invoice))) //TODO Actually make text
+		fmt.Println(string(wire.JSONBytes(payment))) //TODO Actually make text
 	case "json":
-		fmt.Println(string(wire.JSONBytes(invoice)))
+		fmt.Println(string(wire.JSONBytes(payment)))
 	}
 	return nil
 }

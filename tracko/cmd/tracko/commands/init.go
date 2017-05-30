@@ -11,9 +11,6 @@ func init() {
 	//Register invoicer with basecoin
 	bcmd.RegisterStartPlugin(invoicer.Name, func() btypes.Plugin { return invoicer.New() })
 
-	//Change the working directory
-	bcmd.DefaultHome = ".tracko"
-
 	//Change the GenesisJSON
 	bcmd.GenesisJSON = `{
   "app_hash": "",

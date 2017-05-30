@@ -32,7 +32,7 @@ func main() {
 
 	cmd := cli.PrepareMainCmd(
 		RootCmd,
-		"INV",
+		"TRK",
 		os.ExpandEnv(path.Join("$HOME", ".tracko")),
 	)
 	cmd.Execute()
