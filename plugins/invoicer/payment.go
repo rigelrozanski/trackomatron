@@ -5,7 +5,7 @@ import (
 	"time"
 
 	abci "github.com/tendermint/abci/types"
-	types "github.com/tendermint/basecoin-examples/tracko/types"
+	types "github.com/tendermint/trackomatron/types"
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
 )

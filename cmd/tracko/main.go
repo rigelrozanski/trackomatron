@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	_ "github.com/tendermint/basecoin-examples/tracko/cmd/tracko/commands"
+	_ "github.com/tendermint/trackomatron/cmd/tracko/commands"
 	"github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/tmlibs/cli"
 )

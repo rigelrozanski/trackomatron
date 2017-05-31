@@ -16,9 +16,9 @@ import (
 	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/go-wire"
 
-	"github.com/tendermint/basecoin-examples/tracko/common"
-	"github.com/tendermint/basecoin-examples/tracko/plugins/invoicer"
-	"github.com/tendermint/basecoin-examples/tracko/types"
+	"github.com/tendermint/trackomatron/common"
+	"github.com/tendermint/trackomatron/plugins/invoicer"
+	"github.com/tendermint/trackomatron/types"
 )
 
 var (

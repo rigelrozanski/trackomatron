@@ -8,7 +8,7 @@ import (
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
 
-	"github.com/tendermint/basecoin-examples/tracko/types"
+	"github.com/tendermint/trackomatron/types"
 )
 
 func validateInvoiceCtx(ctx *types.Context) abci.Result {

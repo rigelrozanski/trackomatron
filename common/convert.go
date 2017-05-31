@@ -9,7 +9,7 @@ import (
 	"github.com/sethgrid/pester"
 	"github.com/shopspring/decimal"
 
-	"github.com/tendermint/basecoin-examples/tracko/types"
+	"github.com/tendermint/trackomatron/types"
 )
 
 func ConvertAmtCurTime(denomOut string, in *types.AmtCurTime) (out *types.AmtCurTime, err error) {

@@ -6,7 +6,7 @@ import (
 	btypes "github.com/tendermint/basecoin/types"
 	wire "github.com/tendermint/go-wire"
 
-	"github.com/tendermint/basecoin-examples/tracko/types"
+	"github.com/tendermint/trackomatron/types"
 )
 
 func validateProfile(profile *types.Profile) abci.Result {

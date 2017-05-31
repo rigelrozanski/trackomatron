@@ -9,7 +9,7 @@ import:
   subpackages:
   - types
 - package: github.com/tendermint/basecoin
-  version: logfix
+  version: develop
   subpackages:
   - cmd/commands
   - state
