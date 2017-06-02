@@ -17,6 +17,6 @@ import:
 - package: github.com/tendermint/go-wire
   version: develop
 - package: github.com/tendermint/tendermint
-  version: develop
+  version: 11b5d11e9eec170e1d3dce165f0270d5c0759d69
 - package: github.com/tendermint/tmlibs
   version: develop

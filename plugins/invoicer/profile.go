@@ -1,8 +1,9 @@
 package invoicer
 
 import (
+	"bytes"
+
 	abci "github.com/tendermint/abci/types"
-	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	btypes "github.com/tendermint/basecoin/types"
 	wire "github.com/tendermint/go-wire"
 
@@ -90,10 +91,10 @@ func profileRegistered(active []string, name string) bool {
 	return false
 }
 
-func nameFromAddress(store btypes.KVStore, active []string, address bcmd.Address) string {
+func nameFromAddress(store btypes.KVStore, active []string, address []byte) string {
 	for _, name := range active {
 		profile, _ := getProfile(store, name)
-		if profile.Address == address {
+		if bytes.Compare(profile.Address, address) == 0 {
 			return profile.Name
 		}
 	}

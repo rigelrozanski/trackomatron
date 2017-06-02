@@ -3,7 +3,6 @@ package types
 import (
 	"time"
 
-	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/go-wire"
 	"github.com/tendermint/tmlibs/merkle"
 )
@@ -20,15 +19,15 @@ func TxBytes(object interface{}, tb byte) []byte {
 }
 
 type Profile struct {
-	Address         bcmd.Address //identifier for querying
-	Name            string       //identifier for querying
-	AcceptedCur     string       //currency you will accept payment in
-	DepositInfo     string       //default deposit information (mostly for fiat)
-	DueDurationDays int          //default duration until a sent invoice due date
-	Active          bool         //default duration until a sent invoice due date
+	Address         []byte //identifier for querying
+	Name            string //identifier for querying
+	AcceptedCur     string //currency you will accept payment in
+	DepositInfo     string //default deposit information (mostly for fiat)
+	DueDurationDays int    //default duration until a sent invoice due date
+	Active          bool   //default duration until a sent invoice due date
 }
 
-func NewProfile(Address bcmd.Address, Name, AcceptedCur, DepositInfo string,
+func NewProfile(Address []byte, Name, AcceptedCur, DepositInfo string,
 	DueDurationDays int) *Profile {
 	return &Profile{
 		Address:         Address,

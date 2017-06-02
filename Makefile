@@ -2,12 +2,17 @@ PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 
 all: get_vendor_deps test install
 
-test: test_cli test_unit
+test: test_lightcli test_nodecli test_unit
 
-test_cli:
+test_lightcli: 
 	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
-		-q -O cmd/tracko/test/shunit2 
-	bash cmd/tracko/test/test.sh
+		-q -O test/shunit2 
+	bash test/lightcli.sh
+
+test_nodecli:
+	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
+		-q -O test/shunit2 
+	bash test/nodecli.sh
 
 test_unit:
 	@go test $(PACKAGES)

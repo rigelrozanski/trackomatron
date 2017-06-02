@@ -74,54 +74,56 @@ var (
 		Short: "pay invoices and expenses with transaction infomation",
 		RunE:  paymentCmd,
 	}
+
+	//Exposed flagsets
+	FSProfile *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
+	FSInvoice *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
+	FSPayment *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
 
 	//register flags
-	fsProfile := flag.NewFlagSet("", flag.ContinueOnError)
-	fsProfile.String(FlagTo, "", "Who you're invoicing")
-	fsProfile.String(FlagCur, "BTC", "Payment curreny accepted")
-	fsProfile.String(FlagDepositInfo, "", "Default deposit information to be provided")
-	fsProfile.Int(FlagDueDurationDays, 14, "Default number of days until invoice is due from invoice submission")
+	FSProfile.String(FlagTo, "", "Who you're invoicing")
+	FSProfile.String(FlagCur, "BTC", "Payment curreny accepted")
+	FSProfile.String(FlagDepositInfo, "", "Default deposit information to be provided")
+	FSProfile.Int(FlagDueDurationDays, 14, "Default number of days until invoice is due from invoice submission")
 
-	fsInvoice := flag.NewFlagSet("", flag.ContinueOnError)
-	fsInvoice.String(FlagTo, "allinbits", "Name of the invoice receiver")
-	fsInvoice.String(FlagDepositInfo, "", "Deposit information for invoice payment (default: profile)")
-	fsInvoice.String(FlagNotes, "", "Notes regarding the expense")
-	fsInvoice.String(FlagCur, "", "Currency which invoice should be paid in")
-	fsInvoice.String(FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
-	fsInvoice.String(FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
+	FSInvoice.String(FlagTo, "allinbits", "Name of the invoice receiver")
+	FSInvoice.String(FlagDepositInfo, "", "Deposit information for invoice payment (default: profile)")
+	FSInvoice.String(FlagNotes, "", "Notes regarding the expense")
+	FSInvoice.String(FlagCur, "", "Currency which invoice should be paid in")
+	FSInvoice.String(FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
+	FSInvoice.String(FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
 
-	fsExpense := flag.NewFlagSet("", flag.ContinueOnError)
-	fsExpense.String(FlagReceipt, "", "Directory to receipt document file")
-	fsExpense.String(FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
+	FSExpense := flag.NewFlagSet("", flag.ContinueOnError)
+	FSExpense.String(FlagReceipt, "", "Directory to receipt document file")
+	FSExpense.String(FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
 
-	fsPayment := flag.NewFlagSet("", flag.ContinueOnError)
-	fsPayment.String(FlagIDs, "", "IDs to close during this transaction <id1>,<id2>,<id3>... ")
-	fsPayment.String(FlagTransactionID, "", "Completed transaction ID")
-	fsPayment.String(FlagPaid, "", "Payment amount in the format <decimal><currency> eg. 10.23usd")
-	fsPayment.String(FlagDate, "", "Date payment in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
-	fsPayment.String(FlagDateRange, "",
+	FSPayment.String(FlagIDs, "", "IDs to close during this transaction <id1>,<id2>,<id3>... ")
+	FSPayment.String(FlagTransactionID, "", "Completed transaction ID")
+	FSPayment.String(FlagPaid, "", "Payment amount in the format <decimal><currency> eg. 10.23usd")
+	FSPayment.String(FlagDate, "", "Date payment in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
+	FSPayment.String(FlagDateRange, "",
 		"Autoselect IDs within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
 
-	fsEdit := flag.NewFlagSet("", flag.ContinueOnError)
-	fsEdit.String(FlagID, "", "ID (hex) of the invoice to modify")
+	FSEdit := flag.NewFlagSet("", flag.ContinueOnError)
+	FSEdit.String(FlagID, "", "ID (hex) of the invoice to modify")
 
-	ProfileOpenCmd.Flags().AddFlagSet(fsProfile)
-	ProfileEditCmd.Flags().AddFlagSet(fsProfile)
+	ProfileOpenCmd.Flags().AddFlagSet(FSProfile)
+	ProfileEditCmd.Flags().AddFlagSet(FSProfile)
 
-	ContractOpenCmd.Flags().AddFlagSet(fsInvoice)
-	ContractEditCmd.Flags().AddFlagSet(fsInvoice)
-	ContractEditCmd.Flags().AddFlagSet(fsEdit)
+	ContractOpenCmd.Flags().AddFlagSet(FSInvoice)
+	ContractEditCmd.Flags().AddFlagSet(FSInvoice)
+	ContractEditCmd.Flags().AddFlagSet(FSEdit)
 
-	ExpenseOpenCmd.Flags().AddFlagSet(fsInvoice)
-	ExpenseOpenCmd.Flags().AddFlagSet(fsExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(fsInvoice)
-	ExpenseEditCmd.Flags().AddFlagSet(fsExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(fsEdit)
+	ExpenseOpenCmd.Flags().AddFlagSet(FSInvoice)
+	ExpenseOpenCmd.Flags().AddFlagSet(FSExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(FSInvoice)
+	ExpenseEditCmd.Flags().AddFlagSet(FSExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(FSEdit)
 
-	PaymentCmd.Flags().AddFlagSet(fsPayment)
+	PaymentCmd.Flags().AddFlagSet(FSPayment)
 
 	//register commands
 	InvoicerCmd.AddCommand(
@@ -164,6 +166,21 @@ func profileCmd(args []string, TBTx byte) error {
 		return errors.Wrap(err, "Error loading address")
 	}
 
+	txBytes := ProfileTx(TBTx, address, name)
+	return bcmd.AppTx(invoicer.Name, txBytes)
+}
+
+func getAddress() (addr []byte, err error) {
+	keyPath := viper.GetString("from") //TODO update to proper basecoin key once integrated
+	key, err := bcmd.LoadKey(keyPath)
+	if key == nil {
+		return
+	}
+	return key.Address[:], err
+}
+
+func ProfileTx(TBTx byte, address []byte, name string) []byte {
+
 	profile := types.NewProfile(
 		address,
 		name,
@@ -173,16 +190,7 @@ func profileCmd(args []string, TBTx byte) error {
 	)
 
 	txBytes := types.TxBytes(*profile, TBTx)
-	return bcmd.AppTx(invoicer.Name, txBytes)
-}
-
-func getAddress() (addr bcmd.Address, err error) {
-	keyPath := viper.GetString("from") //TODO update to proper basecoin key once integrated
-	key, err := bcmd.LoadKey(keyPath)
-	if key == nil {
-		return
-	}
-	return key.Address, err
+	return txBytes
 }
 
 //TODO optimize, move to the ABCI app
