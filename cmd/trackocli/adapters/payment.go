@@ -1,3 +1,4 @@
+//nolint
 package adapters
 
 import (
@@ -17,75 +18,67 @@ import (
 	trtypes "github.com/tendermint/trackomatron/types"
 )
 
-type ProfilePresenter struct{}
+type PaymentPresenter struct{}
 
-func (_ ProfilePresenter) MakeKey(str string) ([]byte, error) {
-	key := invoicer.ProfileKey(str)
+func (_ PaymentPresenter) MakeKey(str string) ([]byte, error) {
+	key := invoicer.PaymentKey(str)
 	return key, nil
 }
 
-func (_ ProfilePresenter) ParseData(raw []byte) (interface{}, error) {
-	var profile trtypes.Profile
-	err := wire.ReadBinaryBytes(raw, &profile)
-	return profile, err
+func (_ PaymentPresenter) ParseData(raw []byte) (interface{}, error) {
+	var payment trtypes.Payment
+	err := wire.ReadBinaryBytes(raw, &payment)
+	return payment, err
 }
 
 /**** build out the tx ****/
 
 var (
-	_ txs.ReaderMaker      = ProfileTxMaker{}
-	_ lightclient.TxReader = ProfileTxReader{}
+	_ txs.ReaderMaker      = PaymentTxMaker{}
+	_ lightclient.TxReader = PaymentTxReader{}
 )
 
-type ProfileTxMaker struct {
-	TBTx byte
-}
+type PaymentTxMaker struct{}
 
-func (m ProfileTxMaker) MakeReader() (lightclient.TxReader, error) {
+func (m PaymentTxMaker) MakeReader() (lightclient.TxReader, error) {
 	chainID := viper.GetString(commands.ChainFlag)
-	return ProfileTxReader{
-		App:  bcmd.AppTxReader{ChainID: chainID},
-		TBTx: m.TBTx,
+	return PaymentTxReader{
+		App: bcmd.AppTxReader{ChainID: chainID},
 	}, nil
 }
 
 // define flags
 
-type ProfileFlags struct {
+type PaymentFlags struct {
 	bcmd.AppFlags `mapstructure:",squash"`
 }
 
-func (m ProfileTxMaker) Flags() (*flag.FlagSet, interface{}) {
+func (m PaymentTxMaker) Flags() (*flag.FlagSet, interface{}) {
 	fs, app := bcmd.AppFlagSet()
-	fs.AddFlagSet(trcmd.FSProfile)
-
-	if m.TBTx == invoicer.TBTxProfileOpen {
-		// need the name here because no args in light-cli
-		fs.String("profile-name", "", "Name of the new profile to open")
-	}
-	return fs, &ProfileFlags{AppFlags: app}
+	fs.AddFlagSet(trcmd.FSPayment)
+	fs.String(trcmd.FlagReceiverName, "", "Name of the receiver of the payment")
+	return fs, &PaymentFlags{AppFlags: app}
 }
 
 // parse flags
 
-type ProfileTxReader struct {
-	App  bcmd.AppTxReader
-	TBTx byte
+type PaymentTxReader struct {
+	App bcmd.AppTxReader
 }
 
-func (t ProfileTxReader) ReadTxJSON(data []byte, pk crypto.PubKey) (interface{}, error) {
+func (t PaymentTxReader) ReadTxJSON(data []byte, pk crypto.PubKey) (interface{}, error) {
 	return t.App.ReadTxJSON(data, pk)
 }
 
-func (t ProfileTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (interface{}, error) {
-	data := flags.(*ProfileFlags)
+func (t PaymentTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (interface{}, error) {
+	data := flags.(*PaymentFlags)
 
-	var name string
-	if t.TBTx == invoicer.TBTxProfileOpen {
-		name = viper.GetString("profile-name")
+	receiver := viper.GetString(trcmd.FlagReceiverName)
+	tmAddr := viper.GetString(commands.NodeFlag)
+
+	txBytes, err := trcmd.PaymentTx(tmAddr, receiver)
+	if err != nil {
+		return nil, err
 	}
-
-	address := pk.Address()
-	txBytes := trcmd.ProfileTx(t.TBTx, address, name)
 	return t.App.ReadTxFlags(&data.AppFlags, invoicer.Name, txBytes, pk)
 }

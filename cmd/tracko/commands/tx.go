@@ -14,14 +14,16 @@ import (
 	"github.com/spf13/viper"
 
 	bcmd "github.com/tendermint/basecoin/cmd/commands"
+	cmn "github.com/tendermint/tmlibs/common"
 
 	"github.com/tendermint/trackomatron/common"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 	"github.com/tendermint/trackomatron/types"
 )
 
+//nolint
 var (
-	//commands
+	//Commands
 	InvoicerCmd = &cobra.Command{
 		Use:   invoicer.Name,
 		Short: "Commands relating to invoicer system",
@@ -76,9 +78,10 @@ var (
 	}
 
 	//Exposed flagsets
-	FSProfile *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
-	FSInvoice *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
-	FSPayment *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
+	FSProfile = flag.NewFlagSet("", flag.ContinueOnError)
+	FSInvoice = flag.NewFlagSet("", flag.ContinueOnError)
+	FSExpense = flag.NewFlagSet("", flag.ContinueOnError)
+	FSPayment = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
@@ -96,7 +99,6 @@ func init() {
 	FSInvoice.String(FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
 	FSInvoice.String(FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
 
-	FSExpense := flag.NewFlagSet("", flag.ContinueOnError)
 	FSExpense.String(FlagReceipt, "", "Directory to receipt document file")
 	FSExpense.String(FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
 
@@ -179,6 +181,7 @@ func getAddress() (addr []byte, err error) {
 	return key.Address[:], err
 }
 
+// ProfileTx Generates the tendermint TX used by the light and heavy client
 func ProfileTx(TBTx byte, address []byte, name string) []byte {
 
 	profile := types.NewProfile(
@@ -189,12 +192,11 @@ func ProfileTx(TBTx byte, address []byte, name string) []byte {
 		viper.GetInt(FlagDueDurationDays),
 	)
 
-	txBytes := types.TxBytes(*profile, TBTx)
-	return txBytes
+	return invoicer.MarshalWithTB(*profile, TBTx)
 }
 
 //TODO optimize, move to the ABCI app
-func getProfile(cmd *cobra.Command) (profile *types.Profile, err error) {
+func getProfile(tmAddr string) (profile *types.Profile, err error) {
 
 	//get the sender's address
 	address, err := getAddress()
@@ -202,7 +204,6 @@ func getProfile(cmd *cobra.Command) (profile *types.Profile, err error) {
 		return profile, errors.Wrap(err, "Error loading address")
 	}
 
-	tmAddr := cmd.Parent().Flag("node").Value.String()
 	profiles, err := queryListString(tmAddr, invoicer.ListProfileActiveKey())
 	if err != nil {
 		return profile, err
@@ -226,51 +227,64 @@ func getProfile(cmd *cobra.Command) (profile *types.Profile, err error) {
 }
 
 func contractOpenCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(cmd, args, invoicer.TBTxContractOpen)
+	return invoiceCmd(invoicer.TBTxContractOpen, cmd, args)
 }
 
 func contractEditCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(cmd, args, invoicer.TBTxContractEdit)
+	return invoiceCmd(invoicer.TBTxContractEdit, cmd, args)
 }
 
 func expenseOpenCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(cmd, args, invoicer.TBTxExpenseOpen)
+	return invoiceCmd(invoicer.TBTxExpenseOpen, cmd, args)
 }
 
 func expenseEditCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(cmd, args, invoicer.TBTxExpenseEdit)
+	return invoiceCmd(invoicer.TBTxExpenseEdit, cmd, args)
 }
 
-func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) (err error) {
+func invoiceCmd(TBTx byte, cmd *cobra.Command, args []string) (err error) {
 	if len(args) != 1 {
 		return errCmdReqArg("amount<amt><cur>")
 	}
 	amountStr := args[0]
 
-	var id []byte = nil
+	tmAddr := cmd.Parent().Flag("node").Value.String()
+
+	txBytes, err := InvoiceTx(TBTx, tmAddr, amountStr)
+	if err != nil {
+		return err
+	}
+	return bcmd.AppTx(invoicer.Name, txBytes)
+}
+
+// InvoiceTx Generates the tendermint TX used by the light and heavy client
+func InvoiceTx(TBTx byte, tmAddr, amountStr string) ([]byte, error) {
+
+	var id []byte
 
 	//if editing
-	if txTB == invoicer.TBTxContractEdit || //require this flag if
-		txTB == invoicer.TBTxExpenseEdit { //require this flag if
+	var err error
+	if TBTx == invoicer.TBTxContractEdit || //require this flag if
+		TBTx == invoicer.TBTxExpenseEdit { //require this flag if
 
 		//get the old id to remove if editing
 		idRaw := viper.GetString(FlagID)
 		if len(idRaw) == 0 {
-			return errors.New("Need the id to edit, please specify through the flag --id")
+			return nil, errors.New("Need the id to edit, please specify through the flag --id")
 		}
-		if !isHex(idRaw) {
-			return errBadHexID
+		if !cmn.IsHex(idRaw) {
+			return nil, ErrBadHexID
 		}
-		id, err = hex.DecodeString(StripHex(idRaw))
+		id, err = hex.DecodeString(cmn.StripHex(idRaw))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	//get the sender's address
-	profile, err := getProfile(cmd)
+	profile, err := getProfile(tmAddr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sender := profile.Name
 
@@ -286,18 +300,18 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) (err error) {
 	if len(dateStr) > 0 {
 		date, err = common.ParseDate(dateStr)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	amt, err := types.ParseAmtCurTime(amountStr, date)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	//calculate payable amount based on invoiced and accepted cur
 	payable, err := common.ConvertAmtCurTime(accCur, amt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	//retrieve flags, or if they aren't used, use the senders profile's default
@@ -306,7 +320,7 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) (err error) {
 	if len(viper.GetString(FlagDueDate)) > 0 {
 		dueDate, err = common.ParseDate(viper.GetString(FlagDueDate))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		dueDate = time.Now().AddDate(0, 0, profile.DueDurationDays)
@@ -321,7 +335,7 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) (err error) {
 
 	var invoice types.Invoice
 
-	switch txTB {
+	switch TBTx {
 	//if not an expense then we're almost done!
 	case invoicer.TBTxContractOpen, invoicer.TBTxContractEdit:
 		invoice = types.NewContract(
@@ -337,16 +351,16 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) (err error) {
 		).Wrap()
 	case invoicer.TBTxExpenseOpen, invoicer.TBTxExpenseEdit:
 		if len(viper.GetString(FlagTaxesPaid)) == 0 {
-			return errors.New("Need --taxes flag")
+			return nil, errors.New("Need --taxes flag")
 		}
 
 		taxes, err := types.ParseAmtCurTime(viper.GetString(FlagTaxesPaid), date)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		docBytes, err := ioutil.ReadFile(viper.GetString(FlagReceipt))
 		if err != nil {
-			return errors.Wrap(err, "Problem reading receipt file")
+			return nil, errors.Wrap(err, "Problem reading receipt file")
 		}
 		_, filename := path.Split(viper.GetString(FlagReceipt))
 
@@ -365,26 +379,35 @@ func invoiceCmd(cmd *cobra.Command, args []string, txTB byte) (err error) {
 			taxes,
 		).Wrap()
 	default:
-		return errors.New("Unrecognized type-bytes")
+		return nil, errors.New("Unrecognized type-bytes")
 	}
 
-	//txBytes := invoice.TxBytesOpen()
-	txBytes := types.TxBytes(invoice, txTB)
-	return bcmd.AppTx(invoicer.Name, txBytes)
+	return invoicer.MarshalWithTB(invoice, TBTx), nil
 }
 
 func paymentCmd(cmd *cobra.Command, args []string) error {
-
 	var receiver string
 	if len(args) != 1 {
 		return errCmdReqArg("receiver")
 	}
 	receiver = args[0]
 
-	//get the sender's address
-	profile, err := getProfile(cmd)
+	tmAddr := cmd.Parent().Flag("node").Value.String()
+
+	txBytes, err := PaymentTx(tmAddr, receiver)
 	if err != nil {
 		return err
+	}
+	return bcmd.AppTx(invoicer.Name, txBytes)
+}
+
+// PaymentTx Generates the tendermint TX used by the light and heavy client
+func PaymentTx(tmAddr, receiver string) ([]byte, error) {
+
+	//get the sender's address
+	profile, err := getProfile(tmAddr)
+	if err != nil {
+		return nil, err
 	}
 	sender := profile.Name
 
@@ -392,10 +415,10 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 	flagDateRange := viper.GetString(FlagDateRange)
 
 	if len(flagIDs) > 0 && len(flagDateRange) > 0 {
-		return errors.New("Cannot use both the IDs flag and date-range flag")
+		return nil, errors.New("Cannot use both the IDs flag and date-range flag")
 	}
 	if len(flagIDs) == 0 && len(flagDateRange) == 0 {
-		return errors.New("Must include an IDs flag or date-range flag")
+		return nil, errors.New("Must include an IDs flag or date-range flag")
 	}
 
 	//Get the date range or list of IDs
@@ -405,17 +428,17 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 		var err error
 		startDate, endDate, err = common.ParseDateRange(flagDateRange)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		idsStr := strings.Split(flagIDs, ",")
 		for _, idHex := range idsStr {
-			if !isHex(idHex) {
-				return errBadHexID
+			if !cmn.IsHex(idHex) {
+				return nil, ErrBadHexID
 			}
-			id, err := hex.DecodeString(StripHex(idHex))
+			id, err := hex.DecodeString(cmn.StripHex(idHex))
 			if err != nil {
-				return err
+				return nil, err
 			}
 			ids = append([][]byte{id}, ids...)
 		}
@@ -423,11 +446,11 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 
 	date, err := common.ParseDate(viper.GetString(FlagDate))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	amt, err := types.ParseAmtCurTime(viper.GetString(FlagPaid), date)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	payment := types.NewPayment(
@@ -439,6 +462,5 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 		startDate,
 		endDate,
 	)
-	txBytes := types.TxBytes(*payment, invoicer.TBTxPayment)
-	return bcmd.AppTx(invoicer.Name, txBytes)
+	return invoicer.MarshalWithTB(*payment, invoicer.TBTxPayment), nil
 }

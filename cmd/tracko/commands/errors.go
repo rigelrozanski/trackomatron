@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	errBadHexID = fmt.Errorf("HexID is not formatted correctly, must start with 0x")
+	// ErrBadHexID is an error for improperly formatted hex strings
+	ErrBadHexID = fmt.Errorf("HexID is not formatted correctly, must start with 0x")
 )
 
 func errCmdReqArg(arg string) error {

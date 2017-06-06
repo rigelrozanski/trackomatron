@@ -32,11 +32,13 @@ func main() {
 	proofs.StatePresenters.Register("account", bcmd.AccountPresenter{})
 	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
 	proofs.StatePresenters.Register("profile", adapters.ProfilePresenter{})
+	proofs.StatePresenters.Register("payment", adapters.PaymentPresenter{})
 
 	txs.Register("send", bcmd.SendTxMaker{})
-	txs.Register("profile-open", adapters.ProfileTxMaker{invplug.TBTxProfileOpen})
-	txs.Register("profile-edit", adapters.ProfileTxMaker{invplug.TBTxProfileEdit})
-	txs.Register("profile-deactivate", adapters.ProfileTxMaker{invplug.TBTxProfileDeactivate})
+	txs.Register("profile-open", adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileOpen})
+	txs.Register("profile-edit", adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileEdit})
+	txs.Register("profile-deactivate", adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileDeactivate})
+	txs.Register("payment", adapters.PaymentTxMaker{})
 
 	// set up the various commands to use
 	TrackoCli.AddCommand(

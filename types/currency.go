@@ -8,16 +8,19 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// CurrencyTime represents a currency denom and associated date
 type CurrencyTime struct {
 	Cur  string
 	Date time.Time
 }
 
+// AmtCurTime represents a CurrencyTime and associated amount
 type AmtCurTime struct {
 	CurTime CurrencyTime
 	Amount  string //Decimal Number
 }
 
+// ParseAmtCurTime parse AmtCurTime from <amt><cur> and date
 func ParseAmtCurTime(amtCur string, date time.Time) (*AmtCurTime, error) {
 
 	if len(amtCur) == 0 {
@@ -32,6 +35,9 @@ func ParseAmtCurTime(amtCur string, date time.Time) (*AmtCurTime, error) {
 	return &AmtCurTime{CurrencyTime{cur, date}, amt}, nil
 }
 
+//AmtCurTime Algebra
+
+//nolint
 func (a *AmtCurTime) Add(a2 *AmtCurTime) (*AmtCurTime, error) {
 	switch {
 	case a == nil && a2 != nil:
@@ -50,6 +56,7 @@ func (a *AmtCurTime) Add(a2 *AmtCurTime) (*AmtCurTime, error) {
 	return nil, nil //never called
 }
 
+//nolint
 func (a *AmtCurTime) Minus(a2 *AmtCurTime) (*AmtCurTime, error) {
 	switch {
 	case a == nil && a2 != nil:
@@ -68,6 +75,9 @@ func (a *AmtCurTime) Minus(a2 *AmtCurTime) (*AmtCurTime, error) {
 	return nil, nil //never called
 }
 
+//AmtCurTime Equalities
+
+//nolint
 func (a *AmtCurTime) EQ(a2 *AmtCurTime) (bool, error) {
 	amt1, amt2, err := getDecimals(a, a2)
 	if err != nil {
@@ -76,6 +86,7 @@ func (a *AmtCurTime) EQ(a2 *AmtCurTime) (bool, error) {
 	return amt1.Equal(amt2), nil
 }
 
+//nolint
 func (a *AmtCurTime) GT(a2 *AmtCurTime) (bool, error) {
 	amt1, amt2, err := getDecimals(a, a2)
 	if err != nil {
@@ -84,6 +95,7 @@ func (a *AmtCurTime) GT(a2 *AmtCurTime) (bool, error) {
 	return amt1.GreaterThan(amt2), nil
 }
 
+//nolint
 func (a *AmtCurTime) GTE(a2 *AmtCurTime) (bool, error) {
 	amt1, amt2, err := getDecimals(a, a2)
 	if err != nil {
@@ -92,6 +104,7 @@ func (a *AmtCurTime) GTE(a2 *AmtCurTime) (bool, error) {
 	return amt1.GreaterThanOrEqual(amt2), nil
 }
 
+//nolint
 func (a *AmtCurTime) LT(a2 *AmtCurTime) (bool, error) {
 	amt1, amt2, err := getDecimals(a, a2)
 	if err != nil {
@@ -100,6 +113,7 @@ func (a *AmtCurTime) LT(a2 *AmtCurTime) (bool, error) {
 	return amt1.LessThan(amt2), nil
 }
 
+//nolint
 func (a *AmtCurTime) LTE(a2 *AmtCurTime) (bool, error) {
 	amt1, amt2, err := getDecimals(a, a2)
 	if err != nil {

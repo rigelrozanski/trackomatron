@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/trackomatron/types"
 )
 
+// ConvertAmtCurTime converts a AmtCurTime variable to the same value with a different valuation denom
 func ConvertAmtCurTime(denomOut string, in *types.AmtCurTime) (out *types.AmtCurTime, err error) {
 
 	inDec, err := decimal.NewFromString(in.Amount)
@@ -25,11 +26,11 @@ func ConvertAmtCurTime(denomOut string, in *types.AmtCurTime) (out *types.AmtCur
 	}
 
 	return &types.AmtCurTime{
-		types.CurrencyTime{
-			denomOut,
-			in.CurTime.Date,
+		CurTime: types.CurrencyTime{
+			Cur:  denomOut,
+			Date: in.CurTime.Date,
 		},
-		outDec.String(),
+		Amount: outDec.String(),
 	}, nil
 }
 

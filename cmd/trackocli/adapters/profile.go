@@ -1,3 +1,4 @@
+//nolint
 package adapters
 
 import (
@@ -60,8 +61,7 @@ func (m ProfileTxMaker) Flags() (*flag.FlagSet, interface{}) {
 	fs.AddFlagSet(trcmd.FSProfile)
 
 	if m.TBTx == invoicer.TBTxProfileOpen {
-		// need the name here because no args in light-cli
-		fs.String("profile-name", "", "Name of the new profile to open")
+		fs.String(trcmd.FlagProfileName, "", "Name of the new profile to open")
 	}
 	return fs, &ProfileFlags{AppFlags: app}
 }
@@ -82,7 +82,7 @@ func (t ProfileTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (inter
 
 	var name string
 	if t.TBTx == invoicer.TBTxProfileOpen {
-		name = viper.GetString("profile-name")
+		name = viper.GetString(trcmd.FlagProfileName)
 	}
 
 	address := pk.Address()

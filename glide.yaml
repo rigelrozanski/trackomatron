@@ -1,4 +1,4 @@
-package: github.com/tendermint/basecoin-examples/config
+package: github.com/tendermint/trackomatron
 import:
 - package: github.com/pkg/errors
 - package: github.com/shopspring/decimal
@@ -19,4 +19,4 @@ import:
 - package: github.com/tendermint/tendermint
   version: 11b5d11e9eec170e1d3dce165f0270d5c0759d69
 - package: github.com/tendermint/tmlibs
-  version: develop
+  version: stderr

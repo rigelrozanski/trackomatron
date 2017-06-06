@@ -1,7 +1,9 @@
+//nolint
 package commands
 
-var (
-	//common
+const (
+
+	//Common
 	FlagTo          string = "to"
 	FlagCur         string = "cur"
 	FlagDate        string = "date"
@@ -11,7 +13,7 @@ var (
 	FlagID          string = "id"
 	FlagIDs         string = "ids"
 
-	//query
+	//Query
 	FlagNum         string = "num"
 	FlagSum         string = "sum"
 	FlagType        string = "type"
@@ -19,18 +21,24 @@ var (
 	FlagDownloadExp string = "download-expense"
 	FlagInactive    string = "inactive"
 
-	//transaction
-	//profile flags
+	//Transaction
+	//Profile flags
 	FlagDueDurationDays string = "due-days"
 
-	//invoice flags
+	//Invoice flags
 	FlagDueDate string = "due-date"
 
-	//expense flags
+	//Expense flags
 	FlagReceipt   string = "receipt"
 	FlagTaxesPaid string = "taxes"
 
-	//payment flags
+	//Payment flags
 	FlagTransactionID string = "tx-id"
 	FlagPaid          string = "paid"
+
+	//Light-client flags
+	//The flags replace what are arguments in the full node
+	FlagProfileName   = "profile-name"
+	FlagInvoiceAmount = "invoice-name"
+	FlagReceiverName  = "payment-name"
 )
