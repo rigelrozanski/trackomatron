@@ -37,6 +37,8 @@ func main() {
 	proofs.StatePresenters.Register(trcmd.AppAdapterProfile, adapters.ProfilePresenter{})
 	proofs.StatePresenters.Register(trcmd.AppAdapterInvoice, adapters.InvoicePresenter{})
 	proofs.StatePresenters.Register(trcmd.AppAdapterPayment, adapters.PaymentPresenter{})
+	proofs.StatePresenters.Register(trcmd.AppAdapterListString, adapters.ListStringPresenter{})
+	proofs.StatePresenters.Register(trcmd.AppAdapterListBytes, adapters.ListBytesPresenter{})
 
 	txs.Register(trcmd.TxNameProfileOpen, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileOpen})
 	txs.Register(trcmd.TxNameProfileEdit, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileEdit})

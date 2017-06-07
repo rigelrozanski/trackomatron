@@ -13,7 +13,6 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/go-wire"
 	cmn "github.com/tendermint/tmlibs/common"
 
@@ -28,37 +27,31 @@ var (
 	QueryInvoiceCmd = &cobra.Command{
 		Use:   "invoice [id]",
 		Short: "Query an invoice by ID",
-		RunE:  queryInvoiceCmd,
 	}
 
 	QueryInvoicesCmd = &cobra.Command{
 		Use:   "invoices",
 		Short: "Query all invoice",
-		RunE:  queryInvoicesCmd,
 	}
 
 	QueryProfileCmd = &cobra.Command{
 		Use:   "profile [name]",
 		Short: "Query a profile",
-		RunE:  queryProfileCmd,
 	}
 
 	QueryProfilesCmd = &cobra.Command{
 		Use:   "profiles",
 		Short: "List all open profiles",
-		RunE:  queryProfilesCmd,
 	}
 
 	QueryPaymentCmd = &cobra.Command{
 		Use:   "payment [id]",
 		Short: "List historical payment",
-		RunE:  queryPaymentCmd,
 	}
 
 	QueryPaymentsCmd = &cobra.Command{
 		Use:   "payments",
 		Short: "List historical payments",
-		RunE:  queryPaymentsCmd,
 	}
 
 	//exposed flagsets
@@ -94,24 +87,6 @@ func init() {
 	QueryInvoicesCmd.Flags().AddFlagSet(FSInvoices)
 	QueryProfilesCmd.Flags().AddFlagSet(FSProfiles)
 	QueryPaymentsCmd.Flags().AddFlagSet(FSPayments)
-
-	//register commands
-	bcmd.RegisterQuerySubcommand(QueryInvoicesCmd)
-	bcmd.RegisterQuerySubcommand(QueryInvoiceCmd)
-	bcmd.RegisterQuerySubcommand(QueryProfileCmd)
-	bcmd.RegisterQuerySubcommand(QueryProfilesCmd)
-	bcmd.RegisterQuerySubcommand(QueryPaymentCmd)
-	bcmd.RegisterQuerySubcommand(QueryPaymentsCmd)
-}
-
-func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
-
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	queryInvoice := func(id []byte) (types.Invoice, error) {
-		return queryInvoice(tmAddr, id)
-	}
-	return DoQueryInvoiceCmd(cmd, args, queryInvoice)
 }
 
 // DoQueryInvoiceCmd is the workhorse of the heavy and light cli query profile commands
@@ -179,19 +154,6 @@ func processFlagDateRange() (startDate, endDate *time.Time, err error) {
 		}
 	}
 	return
-}
-
-func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
-
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	queryListByte := func(key []byte) ([][]byte, error) {
-		return queryListBytes(tmAddr, key)
-	}
-	queryInvoice := func(id []byte) (types.Invoice, error) {
-		return queryInvoice(tmAddr, id)
-	}
-	return DoQueryInvoicesCmd(cmd, args, queryListByte, queryInvoice)
 }
 
 // DoQueryInvoicesCmd is the workhorse of the heavy and light cli query profiles commands
@@ -374,16 +336,6 @@ func downloadExp(expense *types.Expense) error {
 	return nil
 }
 
-func queryProfileCmd(cmd *cobra.Command, args []string) error {
-
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	queryProfile := func(name string) (types.Profile, error) {
-		return queryProfile(tmAddr, name)
-	}
-	return DoQueryProfileCmd(cmd, args, queryProfile)
-}
-
 // DoQueryProfileCmd is the workhorse of the heavy and light cli query profile commands
 func DoQueryProfileCmd(cmd *cobra.Command, args []string,
 	queryProfile func(name string) (types.Profile, error)) error {
@@ -404,16 +356,6 @@ func DoQueryProfileCmd(cmd *cobra.Command, args []string,
 		fmt.Println(string(wire.JSONBytes(profile)))
 	}
 	return nil
-}
-
-func queryProfilesCmd(cmd *cobra.Command, args []string) error {
-
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	queryListString := func(key []byte) ([]string, error) {
-		return queryListString(tmAddr, key)
-	}
-	return DoQueryProfilesCmd(cmd, args, queryListString)
 }
 
 // DoQueryProfilesCmd is the workhorse of the heavy and light cli query profiles commands
@@ -440,16 +382,6 @@ func DoQueryProfilesCmd(cmd *cobra.Command, args []string,
 	return nil
 }
 
-func queryPaymentCmd(cmd *cobra.Command, args []string) error {
-
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	queryPayment := func(transactionID string) (types.Payment, error) {
-		return queryPayment(tmAddr, transactionID)
-	}
-	return DoQueryPaymentCmd(cmd, args, queryPayment)
-}
-
 // DoQueryPaymentCmd is the workhorse of the heavy and light cli query profile commands
 func DoQueryPaymentCmd(cmd *cobra.Command, args []string,
 	queryPayment func(transactionID string) (types.Payment, error)) error {
@@ -472,19 +404,6 @@ func DoQueryPaymentCmd(cmd *cobra.Command, args []string,
 		fmt.Println(string(wire.JSONBytes(payment)))
 	}
 	return nil
-}
-
-func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
-
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	queryListString := func(key []byte) ([]string, error) {
-		return queryListString(tmAddr, key)
-	}
-	queryPayment := func(transactionID string) (types.Payment, error) {
-		return queryPayment(tmAddr, transactionID)
-	}
-	return DoQueryPaymentsCmd(cmd, args, queryListString, queryPayment)
 }
 
 // DoQueryPaymentsCmd is the workhorse of the heavy and light cli query profiles commands
@@ -562,80 +481,4 @@ func DoQueryPaymentsCmd(cmd *cobra.Command, args []string,
 		fmt.Println(string(wire.JSONBytes(payments)))
 	}
 	return nil
-}
-
-///////////////////////////////////////////////////////////////////
-
-func queryProfile(tmAddr, name string) (profile types.Profile, err error) {
-
-	if len(name) == 0 {
-		return profile, ErrBadQuery("name")
-	}
-	key := invoicer.ProfileKey(name)
-
-	res, err := query(tmAddr, key)
-	if err != nil {
-		return profile, err
-	}
-
-	return invoicer.GetProfileFromWire(res)
-}
-
-func queryInvoice(tmAddr string, id []byte) (invoice types.Invoice, err error) {
-
-	if len(id) == 0 {
-		return invoice, ErrBadQuery("id")
-	}
-
-	key := invoicer.InvoiceKey(id)
-	res, err := query(tmAddr, key)
-	if err != nil {
-		return invoice, err
-	}
-
-	return invoicer.GetInvoiceFromWire(res)
-}
-
-func queryPayment(tmAddr string, transactionID string) (payment types.Payment, err error) {
-
-	if len(transactionID) == 0 {
-		return payment, ErrBadQuery("transactionID")
-	}
-
-	key := invoicer.PaymentKey(transactionID)
-	res, err := query(tmAddr, key)
-	if err != nil {
-		return payment, err
-	}
-
-	return invoicer.GetPaymentFromWire(res)
-}
-
-func queryListString(tmAddr string, key []byte) (profile []string, err error) {
-	res, err := query(tmAddr, key)
-	if err != nil {
-		return profile, err
-	}
-	return invoicer.GetListStringFromWire(res)
-}
-
-func queryListBytes(tmAddr string, key []byte) (invoice [][]byte, err error) {
-	res, err := query(tmAddr, key)
-	if err != nil {
-		return invoice, err
-	}
-	return invoicer.GetListBytesFromWire(res)
-}
-
-//Wrap the basecoin query function with a response code check
-func query(tmAddr string, key []byte) ([]byte, error) {
-	resp, err := bcmd.Query(tmAddr, key)
-	if err != nil {
-		return nil, err
-	}
-	if !resp.Code.IsOK() {
-		return nil, errors.Errorf("Query for key (%v) returned non-zero code (%v): %v",
-			string(key), resp.Code, resp.Log)
-	}
-	return resp.Value, nil
 }

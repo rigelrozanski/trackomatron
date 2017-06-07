@@ -58,7 +58,9 @@ const (
 
 	///////////////////////////////////
 	// light-client presenter apps
-	AppAdapterProfile = "profile"
-	AppAdapterInvoice = "invoice"
-	AppAdapterPayment = "payment"
+	AppAdapterProfile    = "profile"
+	AppAdapterInvoice    = "invoice"
+	AppAdapterPayment    = "payment"
+	AppAdapterListString = "listString"
+	AppAdapterListBytes  = "listBytes"
 )

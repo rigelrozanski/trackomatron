@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	cmn "github.com/tendermint/tmlibs/common"
 
 	"github.com/tendermint/trackomatron/common"
@@ -23,60 +21,6 @@ import (
 
 //nolint
 var (
-	//Commands
-	InvoicerCmd = &cobra.Command{
-		Use:   invoicer.Name,
-		Short: "Commands relating to invoicer system",
-	}
-
-	ProfileOpenCmd = &cobra.Command{
-		Use:   "profile-open [name]",
-		Short: "Open a profile for sending/receiving invoices",
-		RunE:  profileOpenCmd,
-	}
-
-	ProfileEditCmd = &cobra.Command{
-		Use:   "profile-edit",
-		Short: "Edit an existing profile",
-		RunE:  profileEditCmd,
-	}
-
-	ProfileDeactivateCmd = &cobra.Command{
-		Use:   "profile-deactivate",
-		Short: "Deactivate and existing profile",
-		RunE:  profileDeactivateCmd,
-	}
-
-	ContractOpenCmd = &cobra.Command{
-		Use:   "contract-open [amount]",
-		Short: "Send a contract invoice of amount <value><currency>",
-		RunE:  contractOpenCmd,
-	}
-
-	ContractEditCmd = &cobra.Command{
-		Use:   "contract-edit [amount]",
-		Short: "Edit an open contract invoice to amount <value><currency>",
-		RunE:  contractEditCmd,
-	}
-
-	ExpenseOpenCmd = &cobra.Command{
-		Use:   "expense-open [amount]",
-		Short: "Send an expense invoice of amount <value><currency>",
-		RunE:  expenseOpenCmd,
-	}
-
-	ExpenseEditCmd = &cobra.Command{
-		Use:   "expense-edit [amount]",
-		Short: "Edit an open expense invoice to amount <value><currency>",
-		RunE:  expenseEditCmd,
-	}
-
-	PaymentCmd = &cobra.Command{
-		Use:   "payment [receiver]",
-		Short: "pay invoices and expenses with transaction infomation",
-		RunE:  paymentCmd,
-	}
-
 	//Exposed flagsets
 	FSProfile = flag.NewFlagSet("", flag.ContinueOnError)
 	FSInvoice = flag.NewFlagSet("", flag.ContinueOnError)
@@ -111,74 +55,6 @@ func init() {
 
 	FSEdit := flag.NewFlagSet("", flag.ContinueOnError)
 	FSEdit.String(FlagID, "", "ID (hex) of the invoice to modify")
-
-	ProfileOpenCmd.Flags().AddFlagSet(FSProfile)
-	ProfileEditCmd.Flags().AddFlagSet(FSProfile)
-
-	ContractOpenCmd.Flags().AddFlagSet(FSInvoice)
-	ContractEditCmd.Flags().AddFlagSet(FSInvoice)
-	ContractEditCmd.Flags().AddFlagSet(FSEdit)
-
-	ExpenseOpenCmd.Flags().AddFlagSet(FSInvoice)
-	ExpenseOpenCmd.Flags().AddFlagSet(FSExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(FSInvoice)
-	ExpenseEditCmd.Flags().AddFlagSet(FSExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(FSEdit)
-
-	PaymentCmd.Flags().AddFlagSet(FSPayment)
-
-	//register commands
-	InvoicerCmd.AddCommand(
-		ProfileOpenCmd,
-		ProfileEditCmd,
-		ProfileDeactivateCmd,
-		ContractOpenCmd,
-		ContractEditCmd,
-		ExpenseOpenCmd,
-		ExpenseEditCmd,
-		PaymentCmd,
-	)
-	bcmd.RegisterTxSubcommand(InvoicerCmd)
-}
-
-func profileOpenCmd(cmd *cobra.Command, args []string) error {
-	return profileCmd(args, invoicer.TBTxProfileOpen)
-}
-
-func profileEditCmd(cmd *cobra.Command, args []string) error {
-	return profileCmd(args, invoicer.TBTxProfileEdit)
-}
-
-func profileDeactivateCmd(cmd *cobra.Command, args []string) error {
-	return profileCmd(args, invoicer.TBTxProfileDeactivate)
-}
-
-func profileCmd(args []string, TBTx byte) error {
-
-	var name string
-	if TBTx == invoicer.TBTxProfileOpen {
-		if len(args) != 1 {
-			return ErrCmdReqArg("name")
-		}
-		name = args[0]
-	}
-
-	address, err := getAddress()
-	if err != nil {
-		return errors.Wrap(err, "Error loading address")
-	}
-
-	txBytes := ProfileTx(TBTx, address, name)
-	return bcmd.AppTx(invoicer.Name, txBytes)
-}
-
-func getAddress() (addr []byte, err error) {
-	keyPath := viper.GetString("from") //TODO update to proper basecoin key once integrated
-	key, err := bcmd.LoadKey(keyPath)
-	if key == nil {
-		return
-	}
-	return key.Address[:], err
 }
 
 // ProfileTx Generates the tendermint TX used by the light and heavy client
@@ -196,13 +72,7 @@ func ProfileTx(TBTx byte, address []byte, name string) []byte {
 }
 
 //TODO optimize, move to the ABCI app
-func getProfile(tmAddr string) (profile *types.Profile, err error) {
-
-	//get the sender's address
-	address, err := getAddress()
-	if err != nil {
-		return profile, errors.Wrap(err, "Error loading address")
-	}
+func getProfile(senderAddr []byte, tmAddr string) (profile *types.Profile, err error) {
 
 	profiles, err := queryListString(tmAddr, invoicer.ListProfileActiveKey())
 	if err != nil {
@@ -214,7 +84,7 @@ func getProfile(tmAddr string) (profile *types.Profile, err error) {
 		if err != nil {
 			return profile, err
 		}
-		if bytes.Compare(p.Address[:], address[:]) == 0 {
+		if bytes.Compare(p.Address[:], senderAddr[:]) == 0 {
 			profile = &p
 			found = true
 			break
@@ -226,39 +96,8 @@ func getProfile(tmAddr string) (profile *types.Profile, err error) {
 	return profile, nil
 }
 
-func contractOpenCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(invoicer.TBTxContractOpen, cmd, args)
-}
-
-func contractEditCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(invoicer.TBTxContractEdit, cmd, args)
-}
-
-func expenseOpenCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(invoicer.TBTxExpenseOpen, cmd, args)
-}
-
-func expenseEditCmd(cmd *cobra.Command, args []string) error {
-	return invoiceCmd(invoicer.TBTxExpenseEdit, cmd, args)
-}
-
-func invoiceCmd(TBTx byte, cmd *cobra.Command, args []string) (err error) {
-	if len(args) != 1 {
-		return ErrCmdReqArg("amount<amt><cur>")
-	}
-	amountStr := args[0]
-
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-
-	txBytes, err := InvoiceTx(TBTx, tmAddr, amountStr)
-	if err != nil {
-		return err
-	}
-	return bcmd.AppTx(invoicer.Name, txBytes)
-}
-
 // InvoiceTx Generates the tendermint TX used by the light and heavy client
-func InvoiceTx(TBTx byte, tmAddr, amountStr string) ([]byte, error) {
+func InvoiceTx(TBTx byte, senderAddr []byte, tmAddr, amountStr string) ([]byte, error) {
 
 	var id []byte
 
@@ -282,7 +121,7 @@ func InvoiceTx(TBTx byte, tmAddr, amountStr string) ([]byte, error) {
 	}
 
 	//get the sender's address
-	profile, err := getProfile(tmAddr)
+	profile, err := getProfile(senderAddr, tmAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -385,24 +224,11 @@ func InvoiceTx(TBTx byte, tmAddr, amountStr string) ([]byte, error) {
 	return invoicer.MarshalWithTB(invoice, TBTx), nil
 }
 
-func paymentCmd(cmd *cobra.Command, args []string) error {
-	var receiver string
-	if len(args) != 1 {
-		return ErrCmdReqArg("receiver")
-	}
-	receiver = args[0]
-
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-
-	txBytes, err := PaymentTx(tmAddr, receiver)
-	if err != nil {
-		return err
-	}
-	return bcmd.AppTx(invoicer.Name, txBytes)
-}
-
 // PaymentTx Generates the tendermint TX used by the light and heavy client
-func PaymentTx(tmAddr, receiver string) ([]byte, error) {
+func PaymentTx(senderAddr []byte, receiver string) ([]byte, error) {
+
+	//NOTE TO FUTURE RIGE: need to move sender retreiving to the ABCI SIDE
+	// as well as all instances of getProfile
 
 	//get the sender's address
 	profile, err := getProfile(tmAddr)

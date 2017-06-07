@@ -94,7 +94,8 @@ func (t InvoiceTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (inter
 	data := flags.(*InvoiceFlags)
 	amount := viper.GetString(trcmd.FlagInvoiceAmount)
 	tmAddr := viper.GetString(commands.NodeFlag)
-	txBytes, err := trcmd.InvoiceTx(t.TBTx, tmAddr, amount)
+	senderAddr := pk.Address()
+	txBytes, err := trcmd.InvoiceTx(t.TBTx, senderAddr, tmAddr, amount)
 	if err != nil {
 		return nil, err
 	}
