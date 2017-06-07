@@ -13,7 +13,7 @@ import (
 
 	bcmd "github.com/tendermint/basecoin/cmd/basecli/commands"
 
-	trcmd "github.com/tendermint/trackomatron/cmd/tracko/commands"
+	trcmd "github.com/tendermint/trackomatron/commands"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 	trtypes "github.com/tendermint/trackomatron/types"
 )

@@ -158,7 +158,7 @@ func profileCmd(args []string, TBTx byte) error {
 	var name string
 	if TBTx == invoicer.TBTxProfileOpen {
 		if len(args) != 1 {
-			return errCmdReqArg("name")
+			return ErrCmdReqArg("name")
 		}
 		name = args[0]
 	}
@@ -244,7 +244,7 @@ func expenseEditCmd(cmd *cobra.Command, args []string) error {
 
 func invoiceCmd(TBTx byte, cmd *cobra.Command, args []string) (err error) {
 	if len(args) != 1 {
-		return errCmdReqArg("amount<amt><cur>")
+		return ErrCmdReqArg("amount<amt><cur>")
 	}
 	amountStr := args[0]
 
@@ -388,7 +388,7 @@ func InvoiceTx(TBTx byte, tmAddr, amountStr string) ([]byte, error) {
 func paymentCmd(cmd *cobra.Command, args []string) error {
 	var receiver string
 	if len(args) != 1 {
-		return errCmdReqArg("receiver")
+		return ErrCmdReqArg("receiver")
 	}
 	receiver = args[0]
 

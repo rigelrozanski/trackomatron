@@ -81,7 +81,10 @@ testOpeningProfiles(){
     openProfile satoshi craig 1
 
     #read the profile just written
+    echo "using state get"
     trackocli proof state get --app=profile --key=satoshi
+    echo "using state profile"
+    trackocli proof state profile satoshi --trace
 }
 
 # load and run these tests with shunit2!

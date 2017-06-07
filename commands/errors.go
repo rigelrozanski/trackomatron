@@ -1,3 +1,4 @@
+//nolint
 package commands
 
 import (
@@ -11,10 +12,10 @@ var (
 	ErrBadHexID = fmt.Errorf("HexID is not formatted correctly, must start with 0x")
 )
 
-func errCmdReqArg(arg string) error {
+func ErrCmdReqArg(arg string) error {
 	return fmt.Errorf("command requires an argument ([%v])", arg) //never stack trace
 }
 
-func errBadQuery(arg string) error {
+func ErrBadQuery(arg string) error {
 	return errors.Errorf("invalid query %v", arg)
 }
