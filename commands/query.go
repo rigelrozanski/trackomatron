@@ -63,6 +63,7 @@ var (
 
 	//exposed flagsets
 	FSDownload = flag.NewFlagSet("", flag.ContinueOnError)
+	FSProfiles = flag.NewFlagSet("", flag.ContinueOnError)
 	FSInvoices = flag.NewFlagSet("", flag.ContinueOnError)
 	FSPayments = flag.NewFlagSet("", flag.ContinueOnError)
 )
@@ -70,6 +71,8 @@ var (
 func init() {
 	//register flags
 	FSDownload.String(FlagDownloadExp, "", "download expenses pdfs to the relative path specified")
+
+	FSProfiles.Bool(FlagInactive, false, "list inactive profiles")
 
 	FSInvoices.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
 	FSInvoices.String(FlagType, "",
@@ -89,7 +92,7 @@ func init() {
 	QueryInvoiceCmd.Flags().AddFlagSet(FSDownload)
 	QueryInvoicesCmd.Flags().AddFlagSet(FSDownload)
 	QueryInvoicesCmd.Flags().AddFlagSet(FSInvoices)
-	QueryProfilesCmd.Flags().Bool(FlagInactive, false, "list inactive profiles")
+	QueryProfilesCmd.Flags().AddFlagSet(FSProfiles)
 	QueryPaymentsCmd.Flags().AddFlagSet(FSPayments)
 
 	//register commands
@@ -103,22 +106,31 @@ func init() {
 
 func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 
+	//TODO Upgrade to viper once basecoin viper upgrade complete
+	tmAddr := cmd.Parent().Flag("node").Value.String()
+	queryInvoice := func(id []byte) (types.Invoice, error) {
+		return queryInvoice(tmAddr, id)
+	}
+	return DoQueryInvoiceCmd(cmd, args, queryInvoice)
+}
+
+// DoQueryInvoiceCmd is the workhorse of the heavy and light cli query profile commands
+func DoQueryInvoiceCmd(cmd *cobra.Command, args []string,
+	queryInvoice func(id []byte) (types.Invoice, error)) error {
+
 	if len(args) != 1 {
-		return errCmdReqArg("id")
+		return ErrCmdReqArg("id")
 	}
 	if !cmn.IsHex(args[0]) {
 		return ErrBadHexID
 	}
 	id, err := hex.DecodeString(cmn.StripHex(args[0]))
-	//return errors.Errorf("%x\n%v\n", id, args[0])
 	if err != nil {
 		return err
 	}
 
 	//get the invoicer object and print it
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	invoice, err := queryInvoice(tmAddr, id)
+	invoice, err := queryInvoice(id)
 	if err != nil {
 		return err
 	}
@@ -170,9 +182,24 @@ func processFlagDateRange() (startDate, endDate *time.Time, err error) {
 }
 
 func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
+
 	//TODO Upgrade to viper once basecoin viper upgrade complete
 	tmAddr := cmd.Parent().Flag("node").Value.String()
-	listInvoices, err := queryListBytes(tmAddr, invoicer.ListInvoiceKey())
+	queryListByte := func(key []byte) ([][]byte, error) {
+		return queryListBytes(tmAddr, key)
+	}
+	queryInvoice := func(id []byte) (types.Invoice, error) {
+		return queryInvoice(tmAddr, id)
+	}
+	return DoQueryInvoicesCmd(cmd, args, queryListByte, queryInvoice)
+}
+
+// DoQueryInvoicesCmd is the workhorse of the heavy and light cli query profiles commands
+func DoQueryInvoicesCmd(cmd *cobra.Command, args []string,
+	queryListBytes func(key []byte) ([][]byte, error),
+	queryInvoice func(id []byte) (types.Invoice, error)) error {
+
+	listInvoices, err := queryListBytes(invoicer.ListInvoiceKey())
 	if err != nil {
 		return err
 	}
@@ -230,7 +257,7 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 	var invoices []types.Invoice
 	for _, id := range listInvoices {
 
-		invoice, err := queryInvoice(tmAddr, id)
+		invoice, err := queryInvoice(id)
 		if err != nil {
 			return errors.Errorf("Bad invoice in active invoice list %x \n%v \n%v", id, listInvoices, err)
 		}
@@ -348,15 +375,25 @@ func downloadExp(expense *types.Expense) error {
 }
 
 func queryProfileCmd(cmd *cobra.Command, args []string) error {
+
+	//TODO Upgrade to viper once basecoin viper upgrade complete
+	tmAddr := cmd.Parent().Flag("node").Value.String()
+	queryProfile := func(name string) (types.Profile, error) {
+		return queryProfile(tmAddr, name)
+	}
+	return DoQueryProfileCmd(cmd, args, queryProfile)
+}
+
+// DoQueryProfileCmd is the workhorse of the heavy and light cli query profile commands
+func DoQueryProfileCmd(cmd *cobra.Command, args []string,
+	queryProfile func(name string) (types.Profile, error)) error {
 	if len(args) != 1 {
-		return errCmdReqArg("name")
+		return ErrCmdReqArg("name")
 	}
 
 	name := args[0]
 
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	profile, err := queryProfile(tmAddr, name)
+	profile, err := queryProfile(name)
 	if err != nil {
 		return err
 	}
@@ -373,6 +410,15 @@ func queryProfilesCmd(cmd *cobra.Command, args []string) error {
 
 	//TODO Upgrade to viper once basecoin viper upgrade complete
 	tmAddr := cmd.Parent().Flag("node").Value.String()
+	queryListString := func(key []byte) ([]string, error) {
+		return queryListString(tmAddr, key)
+	}
+	return DoQueryProfilesCmd(cmd, args, queryListString)
+}
+
+// DoQueryProfilesCmd is the workhorse of the heavy and light cli query profiles commands
+func DoQueryProfilesCmd(cmd *cobra.Command, args []string,
+	queryListString func(key []byte) ([]string, error)) error {
 
 	var key []byte
 	if viper.GetBool(FlagInactive) {
@@ -381,7 +427,7 @@ func queryProfilesCmd(cmd *cobra.Command, args []string) error {
 		key = invoicer.ListProfileActiveKey()
 	}
 
-	listProfiles, err := queryListString(tmAddr, key)
+	listProfiles, err := queryListString(key)
 	if err != nil {
 		return err
 	}
@@ -396,15 +442,25 @@ func queryProfilesCmd(cmd *cobra.Command, args []string) error {
 
 func queryPaymentCmd(cmd *cobra.Command, args []string) error {
 
+	//TODO Upgrade to viper once basecoin viper upgrade complete
+	tmAddr := cmd.Parent().Flag("node").Value.String()
+	queryPayment := func(transactionID string) (types.Payment, error) {
+		return queryPayment(tmAddr, transactionID)
+	}
+	return DoQueryPaymentCmd(cmd, args, queryPayment)
+}
+
+// DoQueryPaymentCmd is the workhorse of the heavy and light cli query profile commands
+func DoQueryPaymentCmd(cmd *cobra.Command, args []string,
+	queryPayment func(transactionID string) (types.Payment, error)) error {
+
 	if len(args) != 1 {
-		return errCmdReqArg("id")
+		return ErrCmdReqArg("id")
 	}
 	transactionID := args[0]
 
 	//get the invoicer object and print it
-	//TODO Upgrade to viper once basecoin viper upgrade complete
-	tmAddr := cmd.Parent().Flag("node").Value.String()
-	payment, err := queryPayment(tmAddr, transactionID)
+	payment, err := queryPayment(transactionID)
 	if err != nil {
 		return err
 	}
@@ -422,8 +478,21 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
 
 	//TODO Upgrade to viper once basecoin viper upgrade complete
 	tmAddr := cmd.Parent().Flag("node").Value.String()
+	queryListString := func(key []byte) ([]string, error) {
+		return queryListString(tmAddr, key)
+	}
+	queryPayment := func(transactionID string) (types.Payment, error) {
+		return queryPayment(tmAddr, transactionID)
+	}
+	return DoQueryPaymentsCmd(cmd, args, queryListString, queryPayment)
+}
 
-	listPayments, err := queryListString(tmAddr, invoicer.ListPaymentKey())
+// DoQueryPaymentsCmd is the workhorse of the heavy and light cli query profiles commands
+func DoQueryPaymentsCmd(cmd *cobra.Command, args []string,
+	queryListString func(key []byte) ([]string, error),
+	queryPayment func(transactionID string) (types.Payment, error)) error {
+
+	listPayments, err := queryListString(invoicer.ListPaymentKey())
 	if err != nil {
 		return err
 	}
@@ -446,7 +515,7 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
 	var payments []types.Payment
 	for _, transactionID := range listPayments {
 
-		payment, err := queryPayment(tmAddr, transactionID)
+		payment, err := queryPayment(transactionID)
 		if err != nil {
 			return errors.Errorf("Bad invoice in active invoice list %v \n%v \n%v", transactionID, listPayments, err)
 		}
@@ -500,7 +569,7 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
 func queryProfile(tmAddr, name string) (profile types.Profile, err error) {
 
 	if len(name) == 0 {
-		return profile, errBadQuery("name")
+		return profile, ErrBadQuery("name")
 	}
 	key := invoicer.ProfileKey(name)
 
@@ -515,7 +584,7 @@ func queryProfile(tmAddr, name string) (profile types.Profile, err error) {
 func queryInvoice(tmAddr string, id []byte) (invoice types.Invoice, err error) {
 
 	if len(id) == 0 {
-		return invoice, errBadQuery("id")
+		return invoice, ErrBadQuery("id")
 	}
 
 	key := invoicer.InvoiceKey(id)
@@ -530,7 +599,7 @@ func queryInvoice(tmAddr string, id []byte) (invoice types.Invoice, err error) {
 func queryPayment(tmAddr string, transactionID string) (payment types.Payment, err error) {
 
 	if len(transactionID) == 0 {
-		return payment, errBadQuery("transactionID")
+		return payment, ErrBadQuery("transactionID")
 	}
 
 	key := invoicer.PaymentKey(transactionID)

@@ -15,6 +15,7 @@ import (
 
 	bcmd "github.com/tendermint/basecoin/cmd/basecli/commands"
 	adapters "github.com/tendermint/trackomatron/cmd/trackocli/adapters"
+	trcmd "github.com/tendermint/trackomatron/commands"
 	invplug "github.com/tendermint/trackomatron/plugins/invoicer"
 )
 
@@ -22,23 +23,29 @@ import (
 var TrackoCli = &cobra.Command{
 	Use:   "trackocli",
 	Short: "Light client for trackomatron",
-	Long:  `trackocli is an version of basecli`,
 }
 
 func main() {
 	commands.AddBasicFlags(TrackoCli)
 
-	//initialize proofs and txs
+	//initialize proofs and txs default basecoin behaviour
 	proofs.StatePresenters.Register("account", bcmd.AccountPresenter{})
 	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
-	proofs.StatePresenters.Register("profile", adapters.ProfilePresenter{})
-	proofs.StatePresenters.Register("payment", adapters.PaymentPresenter{})
-
 	txs.Register("send", bcmd.SendTxMaker{})
-	txs.Register("profile-open", adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileOpen})
-	txs.Register("profile-edit", adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileEdit})
-	txs.Register("profile-deactivate", adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileDeactivate})
-	txs.Register("payment", adapters.PaymentTxMaker{})
+
+	//register invoicer plugin flags
+	proofs.StatePresenters.Register(trcmd.AppAdapterProfile, adapters.ProfilePresenter{})
+	proofs.StatePresenters.Register(trcmd.AppAdapterInvoice, adapters.InvoicePresenter{})
+	proofs.StatePresenters.Register(trcmd.AppAdapterPayment, adapters.PaymentPresenter{})
+
+	txs.Register(trcmd.TxNameProfileOpen, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileOpen})
+	txs.Register(trcmd.TxNameProfileEdit, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileEdit})
+	txs.Register(trcmd.TxNameProfileDeactivate, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileDeactivate})
+	txs.Register(trcmd.TxNameContractOpen, adapters.InvoiceTxMaker{TBTx: invplug.TBTxContractOpen})
+	txs.Register(trcmd.TxNameContractEdit, adapters.InvoiceTxMaker{TBTx: invplug.TBTxContractEdit})
+	txs.Register(trcmd.TxNameExpenseOpen, adapters.InvoiceTxMaker{TBTx: invplug.TBTxExpenseOpen})
+	txs.Register(trcmd.TxNameExpenseEdit, adapters.InvoiceTxMaker{TBTx: invplug.TBTxExpenseEdit})
+	txs.Register(trcmd.TxNamePayment, adapters.PaymentTxMaker{})
 
 	// set up the various commands to use
 	TrackoCli.AddCommand(

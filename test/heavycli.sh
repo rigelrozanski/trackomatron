@@ -28,13 +28,13 @@ testOpeningProfiles(){
         tracko key new > $WORKDIR/${TESTKEY[$i]}
         ADDR[$i]=$(cat $WORKDIR/${TESTKEY[$i]} | jq .address | tr -d '"')
         
-        err=$(tracko tx send --from key.json --to ${ADDR[$i]} --amount 1000mycoin > /dev/null 2>&1)
-        assertNull "Error Non-Null Line "$LINENO "$err"
+        err=$(tracko tx send --from key.json --to ${ADDR[$i]} --amount 1000mycoin 2>&1 > /dev/null)
+        assertNull "Error Non-Null Line $LINENO $err" "$err"
     
         #open the profile
         err=$(tracko tx invoicer profile-open ${NAMES[$i]} --cur BTC \
-            --from ${TESTKEY[$i]} --amount 1mycoin > /dev/null 2>&1)
-        assertNull "Error Non-Null Line"$LINENO "$err"
+            --from ${TESTKEY[$i]} --amount 1mycoin 2>&1 > /dev/null)
+        assertNull "Error Non-Null Line $LINENO $err" "$err"
     done
     
     #check if the profiles have been opened
@@ -45,8 +45,8 @@ testOpeningProfiles(){
 }
     
 testDeletingProfile(){
-    err=$(tracko tx invoicer profile-deactivate --from ${TESTKEY[3]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line "$LINENO "$err"
+    err=$(tracko tx invoicer profile-deactivate --from ${TESTKEY[3]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
     
     #test if profile is active
     ACTIVE=$(tracko query profile ${NAMES[3]} | jq .Active)
@@ -62,15 +62,14 @@ testDeletingProfile(){
 }
 
 testEditingProfile(){
-    err=$(tracko tx invoicer profile-edit --from ${TESTKEY[0]} --cur USD --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line"$LINENO "$err"
+    err=$(tracko tx invoicer profile-edit --from ${TESTKEY[0]} --cur USD --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
     CUR=$(tracko query profile ${NAMES[0]} | jq .AcceptedCur | tr -d '"')
     assertEquals 'active profile should be editable' "$CUR" "USD"
 
     #make sure that we're prevented from editing an inactive profile
-    err=$(tracko tx invoicer profile-edit --from ${TESTKEY[3]} --cur USD --amount 1mycoin > /dev/null 2>&1)
-    #TODO change to NotNULL this next line should actually be generating an error
-    assertNull "Error Non-Null Line"$LINENO "$err"
+    err=$(tracko tx invoicer profile-edit --from ${TESTKEY[3]} --cur USD --amount 1mycoin 2>&1 > /dev/null)
+    assertNotNull "Non-Null Error expected at Line $LINENO" "$err"
     CUR=$(tracko query profile ${NAMES[3]} | jq .AcceptedCur | tr -d '"')
     assertNotEquals 'inactive profile should not be editable' "$CUR" "USD"
 }
@@ -78,30 +77,30 @@ testEditingProfile(){
 testContractInvoice(){
     #Create the invoice
     err=$(tracko tx invoicer contract-open 1000.99USD --date 2017-01-01 \
-        --to AllInBits --notes thanks! --from ${TESTKEY[1]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line "$LINENO "$err"
+        --to AllInBits --notes thanks! --from ${TESTKEY[1]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
 
     ID=$(tracko query invoices | jq .[0][1].ID | tr -d '"')
     CUR1=$(tracko query invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
     
     #Edit the invoice
     err=$(tracko tx invoicer contract-edit 1000.99CAD --id 0x$ID --date 2017-01-01 \
-        --to AllInBits --notes thanks! --from ${TESTKEY[1]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line "$LINENO "$err"
+        --to AllInBits --notes thanks! --from ${TESTKEY[1]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
     CUR2=$(tracko query invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
     
     assertNotEquals 'contract invoice currency should have been edited' "$CUR1" "$CUR2"
 
     #pay the contract invoice
     err=$(tracko tx invoicer payment Bucky --ids 0x$ID --paid 0.5BTC --date 2017-01-01 \
-        --tx-id "FOOBTC-TX-01" --from ${TESTKEY[0]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line"$LINENO "$err"
+        --tx-id "FOOBTC-TX-01" --from ${TESTKEY[0]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
     open=$(tracko query invoice 0x$ID | jq .data.Ctx.Open)
     assertEquals "Invoice should be open as not fully paid" "$open" "true"
     
     err=$(tracko tx invoicer payment Bucky --ids 0x$ID --paid 0.2454003323983133BTC \
-        --date 2017-01-01 --tx-id "FOOBTC-TX-02" --from ${TESTKEY[0]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line"$LINENO "$err"
+        --date 2017-01-01 --tx-id "FOOBTC-TX-02" --from ${TESTKEY[0]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
     open=$(tracko query invoice 0x$ID | jq .data.Ctx.Open)
     assertNotEquals "invoice should nolonger be open" "$open" "true"
     
@@ -122,13 +121,13 @@ testContractExpense(){
 
     #Open receipt
     err=$(tracko tx invoicer expense-open 99.99USD --date 2017-01-01 --receipt $DIR1/invoicerDoc.png \
-        --taxes 3.00USD --to AllInBits --notes transportation --from ${TESTKEY[1]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line"$LINENO "$err"
+        --taxes 3.00USD --to AllInBits --notes transportation --from ${TESTKEY[1]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
    
     #Download receipt from query
     ID2=$(tracko query invoices | jq .[1][1].ID | tr -d '"')
-    err=$(tracko query invoice 0x$ID2 --download-expense $DIR2 > /dev/null 2>&1)
-    assertNull "Error Non-Null Line"$LINENO "$err"
+    err=$(tracko query invoice 0x$ID2 --download-expense $DIR2 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
     
     assertTrue "Receipt didn't download from query" "[ -f $DIR2/invoicerDoc.png ]"
 }
@@ -138,8 +137,8 @@ testSums(){
     DATES=(2017-01-02 2017-01-15 2017-02-01 2017-03-15 )
     for i in "${!NAMES[@]}"; do 
         err=$(tracko tx invoicer contract-open 1000USD --date ${DATES[$i]} \
-            --to AllInBits --notes thanks! --from ${TESTKEY[1]} --amount 1mycoin > /dev/null 2>&1)
-        assertNull "Error Non-Null Line"$LINENO "$err"
+            --to AllInBits --notes thanks! --from ${TESTKEY[1]} --amount 1mycoin 2>&1 > /dev/null)
+        assertNull "Error Non-Null Line $LINENO $err" "$err"
     done
     
     #count the number of new invoices
@@ -151,8 +150,8 @@ testSums(){
     
     #pay a bit of the invoices off
     err=$(tracko tx invoicer payment Bucky --date-range 2017-01-02: --paid 2BTC --date 2017-03-15 \
-        --tx-id "FOOBTC-TX-03" --from ${TESTKEY[0]} --amount 1mycoin > /dev/null 2>&1)
-    assertNull "Error Non-Null Line"$LINENO "$err"
+        --tx-id "FOOBTC-TX-03" --from ${TESTKEY[0]} --amount 1mycoin 2>&1 > /dev/null)
+    assertNull "Error Non-Null Line $LINENO $err" "$err"
    
     #check that some of the invoices are closed from that last payment
     len=$(tracko query invoices --date-range 2017-01-02: --type open | jq '. | length')

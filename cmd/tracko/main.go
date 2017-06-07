@@ -8,7 +8,7 @@ import (
 
 	"github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/tmlibs/cli"
-	_ "github.com/tendermint/trackomatron/cmd/tracko/commands"
+	_ "github.com/tendermint/trackomatron/commands"
 )
 
 func main() {

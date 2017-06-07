@@ -1,5 +1,5 @@
-hash: 8df5e680b165a1fc9955d75236769468d83ff935aca198eee1bc0b8098a73d6f
-updated: 2017-06-06T20:26:55.035901235-04:00
+hash: 23074d244d6f47c105ea888d40899f0834dd078060e3be092f63a1b6dc2d3011
+updated: 2017-06-07T02:17:33.905958927-04:00
 imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
@@ -82,7 +82,7 @@ imports:
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: github.com/spf13/cobra
-  version: 84f471618b363c4e298af84c2b53aa4f687c5f70
+  version: 99ff9334bda26384b5ef4a4aaa4d444d29bdde73
 - name: github.com/spf13/jwalterweatherman
   version: 0efa5202c04663c757d84f90f5219c1250baf94f
 - name: github.com/spf13/pflag
@@ -135,13 +135,15 @@ imports:
   - keys/server
   - keys/server/types
   - keys/storage/filestorage
+- name: github.com/tendermint/go-data
+  version: e7fcc6d081ec8518912fcdc103188275f83a3ee5
 - name: github.com/tendermint/go-wire
   version: 5f88da3dbc1a72844e6dfaf274ce87f851d488eb
   subpackages:
   - data
   - data/base58
 - name: github.com/tendermint/light-client
-  version: 424905d3813586ce7e64e18690676250a0595ad4
+  version: 490d8974e7e8d3e941bd1af7b968bc02b28d2be1
   subpackages:
   - certifiers
   - certifiers/client
@@ -256,11 +258,11 @@ imports:
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
 - name: github.com/stretchr/testify

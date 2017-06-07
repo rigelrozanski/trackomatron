@@ -3,6 +3,9 @@ package commands
 
 const (
 
+	///////////////////////////////////
+	// Flags
+
 	//Common
 	FlagTo          string = "to"
 	FlagCur         string = "cur"
@@ -41,4 +44,21 @@ const (
 	FlagProfileName   = "profile-name"
 	FlagInvoiceAmount = "invoice-name"
 	FlagReceiverName  = "payment-name"
+
+	///////////////////////////////////
+	// Tx Names
+	TxNameProfileOpen       = "profile-open"
+	TxNameProfileEdit       = "profile-edit"
+	TxNameProfileDeactivate = "profile-deactivate"
+	TxNameContractOpen      = "contract-open"
+	TxNameContractEdit      = "contract-edit"
+	TxNameExpenseOpen       = "expense-open"
+	TxNameExpenseEdit       = "expense-edit"
+	TxNamePayment           = "payment"
+
+	///////////////////////////////////
+	// light-client presenter apps
+	AppAdapterProfile = "profile"
+	AppAdapterInvoice = "invoice"
+	AppAdapterPayment = "payment"
 )

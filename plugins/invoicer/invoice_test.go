@@ -56,7 +56,7 @@ func TestRunTxInvoice(t *testing.T) {
 	).Wrap()
 
 	for _, invoice := range invoices {
-		txBytes := types.TxBytes(invoice, 0x01)
+		txBytes := MarshalWithTB(invoice, 0x01)
 		var invoiceRead = new(types.Invoice)
 		err = wire.ReadBinaryBytes(txBytes[1:], invoiceRead)
 		require.Nil(err)
