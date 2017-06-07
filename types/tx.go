@@ -3,21 +3,10 @@ package types
 import (
 	"time"
 
-	"github.com/tendermint/go-wire"
 	"github.com/tendermint/tmlibs/merkle"
 )
 
-const (
-	TBIDExpense = iota
-	TBIDContract
-	TBIDPayment
-)
-
-func TxBytes(object interface{}, tb byte) []byte {
-	data := wire.BinaryBytes(object)
-	return append([]byte{tb}, data...)
-}
-
+// Profile is the state used to store an invoicer profile
 type Profile struct {
 	Address         []byte //identifier for querying
 	Name            string //identifier for querying
@@ -27,6 +16,7 @@ type Profile struct {
 	Active          bool   //default duration until a sent invoice due date
 }
 
+// NewProfile create a new active profile
 func NewProfile(Address []byte, Name, AcceptedCur, DepositInfo string,
 	DueDurationDays int) *Profile {
 	return &Profile{
@@ -41,6 +31,8 @@ func NewProfile(Address []byte, Name, AcceptedCur, DepositInfo string,
 
 //////////////////////////////////////////////////////////////////////
 
+//nolint - Autogenerator code for the invoicer types
+// used to hold contracts and expense invoices
 // +gen holder:"Invoice,Impl[*Contract,*Expense]"
 type InvoiceInner interface {
 	SetID()
@@ -52,12 +44,13 @@ type InvoiceInner interface {
 var _ InvoiceInner = new(Contract)
 var _ InvoiceInner = new(Expense)
 
+// Contract state struct of type Invoice
 type Contract struct {
 	ID  []byte
 	Ctx *Context
 }
 
-//struct used for hash to determine ID
+// Context struct used for hash to determine ID for invoices
 type Context struct {
 	Sender      string
 	Receiver    string
@@ -72,12 +65,13 @@ type Context struct {
 	Paid     *AmtCurTime //Amount Paid towards this invoice
 }
 
+// Unpaid calculates the total remaining unpaid portion of an invoice
 func (c *Context) Unpaid() (*AmtCurTime, error) {
 	return c.Payable.Minus(c.Paid)
 }
 
-//This function will make the maximum payment to the invoice from the fund
-//funds should be reduced from the the fund and returned throught the pointer
+// Pay makes the maximum payment to the invoice from the fund
+//   are then reduced and returned through the variable leftover
 func (c *Context) Pay(fund *AmtCurTime) (leftover *AmtCurTime, err error) {
 	unpaid, err := c.Unpaid()
 	if err != nil {
@@ -102,6 +96,7 @@ func (c *Context) Pay(fund *AmtCurTime) (leftover *AmtCurTime, err error) {
 	return fund, nil
 }
 
+// NewContract creates a new open Contract invoice
 func NewContract(ID []byte, Sender, Receiver, DepositInfo, Notes string,
 	AcceptedCur string, Due time.Time, Amount, Payable *AmtCurTime) *Contract {
 
@@ -123,19 +118,22 @@ func NewContract(ID []byte, Sender, Receiver, DepositInfo, Notes string,
 	}
 }
 
+// SetID generates the Contract ID from the context
 func (w *Contract) SetID() {
-	hashBytes := merkle.SimpleHashFromBinary(w.Ctx)
-	w.ID = append([]byte{TBIDContract}, hashBytes...)
+	w.ID = merkle.SimpleHashFromBinary(w.Ctx)
 }
 
+// GetID get the Contract ID
 func (w *Contract) GetID() []byte {
 	return w.ID
 }
 
+// GetCtx return the context
 func (w *Contract) GetCtx() *Context {
 	return w.Ctx
 }
 
+// Expense state struct of type Invoice
 type Expense struct {
 	ID           []byte
 	Ctx          *Context
@@ -144,6 +142,7 @@ type Expense struct {
 	ExpenseTaxes *AmtCurTime
 }
 
+// NewExpense creates a new open Expense invoice
 func NewExpense(ID []byte, Sender, Receiver, DepositInfo, Notes string,
 	AcceptedCur string, Due time.Time, Amount, Payable *AmtCurTime,
 	Document []byte, DocFileName string, ExpenseTaxes *AmtCurTime) *Expense {
@@ -169,21 +168,24 @@ func NewExpense(ID []byte, Sender, Receiver, DepositInfo, Notes string,
 	}
 }
 
+// SetID generates the Expense ID from the context
 func (e *Expense) SetID() {
-	hashBytes := merkle.SimpleHashFromBinary(e.Ctx)
-	e.ID = append([]byte{TBIDExpense}, hashBytes...)
+	e.ID = merkle.SimpleHashFromBinary(e.Ctx)
 }
 
+// GetID get the Expense ID
 func (e *Expense) GetID() []byte {
 	return e.ID
 }
 
+// GetCtx return the context
 func (e *Expense) GetCtx() *Context {
 	return e.Ctx
 }
 
 /////////////////////////////////////////////////////////////////////////
 
+// Payment state struct for paying invoices
 type Payment struct {
 	TransactionID  string
 	InvoiceIDs     [][]byte //List of ID's to close with transaction
@@ -194,6 +196,7 @@ type Payment struct {
 	EndDate        *time.Time //Optional end date of payments to query
 }
 
+// NewPayment creates a new payment state
 func NewPayment(InvoiceIDs [][]byte, TransactionID, Sender, Receiver string,
 	PaymentCurTime *AmtCurTime, StartDate, EndDate *time.Time) *Payment {
 

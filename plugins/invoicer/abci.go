@@ -1,3 +1,4 @@
+//nolint
 package invoicer
 
 import (
@@ -6,6 +7,7 @@ import (
 	btypes "github.com/tendermint/basecoin/types"
 )
 
+// Name of this plugin
 const Name = "invoicer"
 
 type Invoicer struct {

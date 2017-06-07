@@ -15,12 +15,14 @@ import (
 
 	bcmd "github.com/tendermint/basecoin/cmd/commands"
 	"github.com/tendermint/go-wire"
+	cmn "github.com/tendermint/tmlibs/common"
 
 	"github.com/tendermint/trackomatron/common"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 	"github.com/tendermint/trackomatron/types"
 )
 
+//nolint
 var (
 	//commands
 	QueryInvoiceCmd = &cobra.Command{
@@ -58,10 +60,11 @@ var (
 		Short: "List historical payments",
 		RunE:  queryPaymentsCmd,
 	}
+
 	//exposed flagsets
-	FSDownload *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
-	FSInvoices *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
-	FSPayments *flag.FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
+	FSDownload = flag.NewFlagSet("", flag.ContinueOnError)
+	FSInvoices = flag.NewFlagSet("", flag.ContinueOnError)
+	FSPayments = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
@@ -103,10 +106,10 @@ func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errCmdReqArg("id")
 	}
-	if !isHex(args[0]) {
-		return errBadHexID
+	if !cmn.IsHex(args[0]) {
+		return ErrBadHexID
 	}
-	id, err := hex.DecodeString(StripHex(args[0]))
+	id, err := hex.DecodeString(cmn.StripHex(args[0]))
 	//return errors.Errorf("%x\n%v\n", id, args[0])
 	if err != nil {
 		return err

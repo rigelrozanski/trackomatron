@@ -8,6 +8,7 @@ import (
 	"github.com/tendermint/trackomatron/types"
 )
 
+//nolint Transaction Type-Bytes
 const (
 	TBTxProfileOpen = iota
 	TBTxProfileEdit
@@ -22,37 +23,48 @@ const (
 	TBTxPayment
 )
 
+// MarshalWithTB marshals the object and then prepends a typebyte
+func MarshalWithTB(object interface{}, tb byte) []byte {
+	data := wire.BinaryBytes(object)
+	return append([]byte{tb}, data...)
+}
+
+// ProfileKey generates a store key based on profile name
 func ProfileKey(name string) []byte {
 	return []byte(cmn.Fmt("%v,Profile=%v", Name, name))
 }
 
-func InvoiceKey(ID []byte) []byte {
-	return []byte(cmn.Fmt("%v,ID=%x", Name, ID))
+// InvoiceKey generates a store key based on invoice id bytes
+func InvoiceKey(id []byte) []byte {
+	return []byte(cmn.Fmt("%v,ID=%x", Name, id))
 }
 
+// PaymentKey generates a store key based on transaction id string
 func PaymentKey(transactionID string) []byte {
 	return []byte(cmn.Fmt("%v,Payment=%v", Name, transactionID))
 }
 
+// ListProfileActiveKey generates the store key for the list of active profiles
 func ListProfileActiveKey() []byte {
 	return []byte(cmn.Fmt("%v,Profiles", Name))
 }
 
-//Both active and inactive profiles
+// ListProfileInactiveKey generates the store key for the list of inactive profiles
 func ListProfileInactiveKey() []byte {
 	return []byte(cmn.Fmt("%v,ProfilesAll", Name))
 }
 
+// ListInvoiceKey generates the store key for the list of invoices
 func ListInvoiceKey() []byte {
 	return []byte(cmn.Fmt("%v,Invoices", Name))
 }
 
+// ListPaymentKey generates the store key for the list of invoice payments
 func ListPaymentKey() []byte {
 	return []byte(cmn.Fmt("%v,Payments", Name))
 }
 
-//Get objects from query bytes
-
+// GetProfileFromWire profile from marshalled bytes
 func GetProfileFromWire(bytes []byte) (profile types.Profile, err error) {
 	if len(bytes) == 0 {
 		return profile, errStateNotFound
@@ -62,6 +74,7 @@ func GetProfileFromWire(bytes []byte) (profile types.Profile, err error) {
 	return profile, wrapErrDecodingState(err)
 }
 
+// GetInvoiceFromWire invoice from marshalled bytes
 func GetInvoiceFromWire(bytes []byte) (invoice types.Invoice, err error) {
 	inv := struct{ types.Invoice }{}
 	if len(bytes) == 0 {
@@ -71,6 +84,7 @@ func GetInvoiceFromWire(bytes []byte) (invoice types.Invoice, err error) {
 	return inv.Invoice, wrapErrDecodingState(err)
 }
 
+// GetPaymentFromWire payment from marshalled bytes
 func GetPaymentFromWire(bytes []byte) (payment types.Payment, err error) {
 	if len(bytes) == 0 {
 		return payment, errStateNotFound
@@ -80,6 +94,8 @@ func GetPaymentFromWire(bytes []byte) (payment types.Payment, err error) {
 	return payment, wrapErrDecodingState(err)
 }
 
+// GetListStringFromWire string array from marshalled bytes,
+//   currently used from profile and payment lists
 func GetListStringFromWire(bytes []byte) (out []string, err error) {
 
 	//if list uninitilialized return new
@@ -90,6 +106,8 @@ func GetListStringFromWire(bytes []byte) (out []string, err error) {
 	return out, wrapErrDecodingState(err)
 }
 
+// GetListBytesFromWire string array from marshalled bytes,
+//   currently used from invoice-id lists
 func GetListBytesFromWire(bytes []byte) (out [][]byte, err error) {
 
 	//if list uninitilialized return new

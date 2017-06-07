@@ -5,9 +5,9 @@ import (
 	"time"
 
 	abci "github.com/tendermint/abci/types"
-	types "github.com/tendermint/trackomatron/types"
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
+	types "github.com/tendermint/trackomatron/types"
 )
 
 func validatePayment(ctx types.Context) abci.Result {

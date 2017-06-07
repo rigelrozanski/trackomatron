@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	wire "github.com/tendermint/go-wire"
 	"github.com/tendermint/trackomatron/common"
 	"github.com/tendermint/trackomatron/types"
-	wire "github.com/tendermint/go-wire"
 )
 
 func TestRunTxInvoice(t *testing.T) {

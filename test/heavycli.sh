@@ -2,6 +2,8 @@
 
 oneTimeSetUp(){
     # start tendermint
+    WORKDIR=(~/.tracko)
+    rm -rf $WORKDIR
     tracko init
     tracko unsafe_reset_all
     tracko start  > /dev/null &
@@ -18,7 +20,6 @@ oneTimeTearDown() {
 
 testOpeningProfiles(){
     
-    WORKDIR=(~/.tracko)
     NAMES=(AllInBits Bucky Satoshi Dummy)
     
     for i in "${!NAMES[@]}"; do 
