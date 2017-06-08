@@ -130,8 +130,7 @@ func (p ProofCommander) queryInvoice(id []byte) (invoice types.Invoice, err erro
 }
 
 func (p ProofCommander) queryListString(key []byte) (list []string, err error) {
-	keyHexStr := "0x" + hex.EncodeToString(key)
-	proof, err := p.GetProof(trcmd.AppAdapterListString, keyHexStr, 0) //0 height means latest block
+	proof, err := p.GetProof(trcmd.AppAdapterListString, string(key), 0) //0 height means latest block
 	if err != nil {
 		return
 	}
@@ -139,8 +138,7 @@ func (p ProofCommander) queryListString(key []byte) (list []string, err error) {
 }
 
 func (p ProofCommander) queryListBytes(key []byte) (list [][]byte, err error) {
-	keyHexStr := "0x" + hex.EncodeToString(key)
-	proof, err := p.GetProof(trcmd.AppAdapterListBytes, keyHexStr, 0) //0 height means latest block
+	proof, err := p.GetProof(trcmd.AppAdapterListBytes, string(key), 0) //0 height means latest block
 	if err != nil {
 		return
 	}
