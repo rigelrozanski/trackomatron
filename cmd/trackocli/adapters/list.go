@@ -1,19 +1,11 @@
 //nolint
 package adapters
 
-import (
-	wire "github.com/tendermint/go-wire"
-	cmn "github.com/tendermint/tmlibs/common"
-	trcmd "github.com/tendermint/trackomatron/commands"
-)
+import wire "github.com/tendermint/go-wire"
 
 type ListStringPresenter struct{}
 
 func (_ ListStringPresenter) MakeKey(str string) ([]byte, error) {
-	if !cmn.IsHex(str) {
-		return nil, trcmd.ErrBadHexID
-	}
-	cmn.StripHex(str)
 	return []byte(str), nil
 }
 
@@ -26,10 +18,6 @@ func (_ ListStringPresenter) ParseData(raw []byte) (interface{}, error) {
 type ListBytesPresenter struct{}
 
 func (_ ListBytesPresenter) MakeKey(str string) ([]byte, error) {
-	if !cmn.IsHex(str) {
-		return nil, trcmd.ErrBadHexID
-	}
-	cmn.StripHex(str)
 	return []byte(str), nil
 }
 
