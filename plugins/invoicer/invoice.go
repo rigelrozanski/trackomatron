@@ -2,12 +2,16 @@ package invoicer
 
 import (
 	"bytes"
+	"io/ioutil"
+	"path"
 	"time"
 
+	"github.com/pkg/errors"
 	abci "github.com/tendermint/abci/types"
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
 
+	"github.com/tendermint/trackomatron/common"
 	"github.com/tendermint/trackomatron/types"
 )
 
@@ -29,15 +33,124 @@ func validateInvoiceCtx(ctx *types.Context) abci.Result {
 	}
 }
 
-func runTxInvoice(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, shouldExist bool) (res abci.Result) {
+func runTxInvoice(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 
-	// Decode the new invoice from cli
-	var reader = new(types.Invoice)
-	err := wire.ReadBinaryBytes(txBytes, reader)
+	tb := txBytes[0]
+
+	// Decode tx
+	var tx = new(types.TxInvoice)
+	err := wire.ReadBinaryBytes(txBytes[1:], tx)
 	if err != nil {
 		return abciErrDecodingTX(err)
 	}
-	invoice := *reader
+
+	//get the sender's address
+	profile, err := getProfileFromAddress(store, tx.SenderAddr)
+	if err != nil {
+		return abciErrInternal(err)
+	}
+	sender := profile.Name
+
+	var accCur string
+	if len(tx.Cur) > 0 {
+		accCur = tx.Cur
+	} else {
+		accCur = profile.AcceptedCur
+	}
+
+	date := time.Now()
+	if len(tx.Date) > 0 {
+		date, err = common.ParseDate(tx.Date)
+		if err != nil {
+			return abciErrInternal(err)
+		}
+	}
+	amt, err := types.ParseAmtCurTime(tx.Amount, date)
+	if err != nil {
+		return abciErrInternal(err)
+	}
+
+	//calculate payable amount based on invoiced and accepted cur
+	payable, err := common.ConvertAmtCurTime(accCur, amt)
+	if err != nil {
+		return abciErrInternal(err)
+	}
+
+	//retrieve flags, or if they aren't used, use the senders profile's default
+
+	var dueDate time.Time
+	if len(tx.DueDate) > 0 {
+		dueDate, err = common.ParseDate(tx.DueDate)
+		if err != nil {
+			return abciErrInternal(err)
+		}
+	} else {
+		dueDate = time.Now().AddDate(0, 0, profile.DueDurationDays)
+	}
+
+	var depositInfo string
+	if len(tx.DepositInfo) > 0 {
+		depositInfo = tx.DepositInfo
+	} else {
+		depositInfo = profile.DepositInfo
+	}
+
+	var invoice types.Invoice
+
+	switch tb {
+	//if not an expense then we're almost done!
+	case TBTxContractOpen, TBTxContractEdit:
+		invoice = types.NewContract(
+			tx.EditID,
+			sender,
+			tx.To,
+			depositInfo,
+			tx.Notes,
+			accCur,
+			dueDate,
+			amt,
+			payable,
+		).Wrap()
+	case TBTxExpenseOpen, TBTxExpenseEdit:
+
+		taxes, err := types.ParseAmtCurTime(tx.TaxesPaid, date)
+		if err != nil {
+			return abciErrInternal(err)
+		}
+		docBytes, err := ioutil.ReadFile(tx.Receipt)
+		if err != nil {
+			return abciErrInternal(errors.Wrap(err, "Problem reading receipt file"))
+		}
+		_, filename := path.Split(tx.Receipt)
+
+		invoice = types.NewExpense(
+			tx.EditID,
+			sender,
+			tx.To,
+			depositInfo,
+			tx.Notes,
+			accCur,
+			dueDate,
+			amt,
+			payable,
+			docBytes,
+			filename,
+			taxes,
+		).Wrap()
+	default:
+		return abciErrBadTypeByte
+	}
+
+	switch tb {
+	case TBTxContractOpen, TBTxExpenseOpen:
+		return runActionInvoice(store, invoice, false)
+	case TBTxContractEdit, TBTxExpenseEdit:
+		return runActionInvoice(store, invoice, true)
+	}
+	return abciErrBadTypeByte
+}
+
+func runActionInvoice(store btypes.KVStore, invoice types.Invoice, shouldExist bool) (res abci.Result) {
 
 	//Validate
 	res = validateInvoiceCtx(invoice.GetCtx())

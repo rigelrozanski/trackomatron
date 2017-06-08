@@ -101,15 +101,39 @@ func nameFromAddress(store btypes.KVStore, active []string, address []byte) stri
 	return ""
 }
 
-func runTxProfile(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte, shouldExist bool,
-	action func(store btypes.KVStore, active []string, profile *types.Profile) abci.Result) abci.Result {
+// ProfileTx Generates the tendermint TX used by the light and heavy client
+func runTxProfile(store btypes.KVStore, txBytes []byte) abci.Result {
+
+	tb := txBytes[0]
 
 	// Decode tx
-	var profile = new(types.Profile)
-	err := wire.ReadBinaryBytes(txBytes, profile)
+	var tx = new(types.TxProfile)
+	err := wire.ReadBinaryBytes(txBytes[1:], tx)
 	if err != nil {
 		return abciErrDecodingTX(err)
 	}
+
+	profile := types.NewProfile(
+		tx.Address,
+		tx.Name,
+		tx.AcceptedCur,
+		tx.DepositInfo,
+		tx.DueDurationDays,
+	)
+
+	switch tb {
+	case TBTxProfileOpen:
+		return runActionProfile(store, profile, false, writeProfile)
+	case TBTxProfileEdit:
+		return runActionProfile(store, profile, true, writeProfile)
+	case TBTxProfileDeactivate:
+		return runActionProfile(store, profile, true, deactivateProfile)
+	}
+	return abciErrBadTypeByte
+}
+
+func runActionProfile(store btypes.KVStore, profile *types.Profile, shouldExist bool,
+	action func(store btypes.KVStore, active []string, profile *types.Profile) abci.Result) abci.Result {
 
 	//get the name from address, if not opening a new profile
 	active, err := getListString(store, ListProfileActiveKey())

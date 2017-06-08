@@ -58,7 +58,7 @@ type ProfileFlags struct {
 
 func (m ProfileTxMaker) Flags() (*flag.FlagSet, interface{}) {
 	fs, app := bcmd.AppFlagSet()
-	fs.AddFlagSet(trcmd.FSProfile)
+	fs.AddFlagSet(trcmd.FSTxProfile)
 
 	if m.TBTx == invoicer.TBTxProfileOpen {
 		fs.String(trcmd.FlagProfileName, "", "Name of the new profile to open")

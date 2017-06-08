@@ -55,38 +55,38 @@ var (
 	}
 
 	//exposed flagsets
-	FSDownload = flag.NewFlagSet("", flag.ContinueOnError)
-	FSProfiles = flag.NewFlagSet("", flag.ContinueOnError)
-	FSInvoices = flag.NewFlagSet("", flag.ContinueOnError)
-	FSPayments = flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryDownload = flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryProfiles = flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryInvoices = flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryPayments = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
 	//register flags
-	FSDownload.String(FlagDownloadExp, "", "download expenses pdfs to the relative path specified")
+	FSQueryDownload.String(FlagDownloadExp, "", "download expenses pdfs to the relative path specified")
 
-	FSProfiles.Bool(FlagInactive, false, "list inactive profiles")
+	FSQueryProfiles.Bool(FlagInactive, false, "list inactive profiles")
 
-	FSInvoices.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
-	FSInvoices.String(FlagType, "",
+	FSQueryInvoices.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
+	FSQueryInvoices.String(FlagType, "",
 		"limit the scope by using any of the following modifiers with commas: invoice,expense,open,closed")
-	FSInvoices.String(FlagDateRange, "",
+	FSQueryInvoices.String(FlagDateRange, "",
 		"Query within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
-	FSInvoices.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
-	FSInvoices.String(FlagTo, "", "Only query for invoices to these addresses in the format <ADDR1>,<ADDR2>, etc.")
-	FSInvoices.Bool(FlagSum, false, "Sum invoice values by sender")
+	FSQueryInvoices.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryInvoices.String(FlagTo, "", "Only query for invoices to these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryInvoices.Bool(FlagSum, false, "Sum invoice values by sender")
 
-	FSPayments.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
-	FSPayments.String(FlagDateRange, "",
+	FSQueryPayments.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
+	FSQueryPayments.String(FlagDateRange, "",
 		"Query within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
-	FSPayments.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
-	FSPayments.String(FlagTo, "", "Only query for payments to these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryPayments.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryPayments.String(FlagTo, "", "Only query for payments to these addresses in the format <ADDR1>,<ADDR2>, etc.")
 
-	QueryInvoiceCmd.Flags().AddFlagSet(FSDownload)
-	QueryInvoicesCmd.Flags().AddFlagSet(FSDownload)
-	QueryInvoicesCmd.Flags().AddFlagSet(FSInvoices)
-	QueryProfilesCmd.Flags().AddFlagSet(FSProfiles)
-	QueryPaymentsCmd.Flags().AddFlagSet(FSPayments)
+	QueryInvoiceCmd.Flags().AddFlagSet(FSQueryDownload)
+	QueryInvoicesCmd.Flags().AddFlagSet(FSQueryDownload)
+	QueryInvoicesCmd.Flags().AddFlagSet(FSQueryInvoices)
+	QueryProfilesCmd.Flags().AddFlagSet(FSQueryProfiles)
+	QueryPaymentsCmd.Flags().AddFlagSet(FSQueryPayments)
 }
 
 // DoQueryInvoiceCmd is the workhorse of the heavy and light cli query profile commands

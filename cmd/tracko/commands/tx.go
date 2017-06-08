@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"bytes"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -11,7 +9,6 @@ import (
 
 	trcmd "github.com/tendermint/trackomatron/commands"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
-	"github.com/tendermint/trackomatron/types"
 )
 
 //nolint
@@ -73,20 +70,20 @@ var (
 
 func init() {
 
-	ProfileOpenCmd.Flags().AddFlagSet(trcmd.FSProfile)
-	ProfileEditCmd.Flags().AddFlagSet(trcmd.FSProfile)
+	ProfileOpenCmd.Flags().AddFlagSet(trcmd.FSTxProfile)
+	ProfileEditCmd.Flags().AddFlagSet(trcmd.FSTxProfile)
 
-	ContractOpenCmd.Flags().AddFlagSet(trcmd.FSInvoice)
-	ContractEditCmd.Flags().AddFlagSet(trcmd.FSInvoice)
-	ContractEditCmd.Flags().AddFlagSet(trcmd.FSEdit)
+	ContractOpenCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
+	ContractEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
+	ContractEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoiceEdit)
 
-	ExpenseOpenCmd.Flags().AddFlagSet(trcmd.FSInvoice)
-	ExpenseOpenCmd.Flags().AddFlagSet(trcmd.FSExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSInvoice)
-	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSEdit)
+	ExpenseOpenCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
+	ExpenseOpenCmd.Flags().AddFlagSet(trcmd.FSTxExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
+	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSTxExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoiceEdit)
 
-	PaymentCmd.Flags().AddFlagSet(trcmd.FSPayment)
+	PaymentCmd.Flags().AddFlagSet(trcmd.FSTxPayment)
 
 	//register commands
 	InvoicerCmd.AddCommand(
@@ -114,21 +111,12 @@ func profileDeactivateCmd(cmd *cobra.Command, args []string) error {
 	return profileCmd(args, invoicer.TBTxProfileDeactivate)
 }
 
-func getAddress() (addr []byte, err error) {
-	keyPath := viper.GetString("from") //TODO update to proper basecoin key once integrated
-	key, err := bcmd.LoadKey(keyPath)
-	if key == nil {
-		return
-	}
-	return key.Address[:], err
-}
-
 func profileCmd(args []string, TBTx byte) error {
 
 	var name string
 	if TBTx == invoicer.TBTxProfileOpen {
 		if len(args) != 1 {
-			return ErrCmdReqArg("name")
+			return trcmd.ErrCmdReqArg("name")
 		}
 		name = args[0]
 	}
@@ -151,51 +139,6 @@ func getAddress() (addr []byte, err error) {
 	return key.Address[:], err
 }
 
-// ProfileTx Generates the tendermint TX used by the light and heavy client
-func ProfileTx(TBTx byte, address []byte, name string) []byte {
-
-	profile := types.NewProfile(
-		address,
-		name,
-		viper.GetString(FlagCur),
-		viper.GetString(FlagDepositInfo),
-		viper.GetInt(FlagDueDurationDays),
-	)
-
-	return invoicer.MarshalWithTB(*profile, TBTx)
-}
-
-//TODO optimize, move to the ABCI app
-func getProfile(tmAddr string) (profile *types.Profile, err error) {
-
-	//get the sender's address
-	address, err := getAddress()
-	if err != nil {
-		return profile, errors.Wrap(err, "Error loading address")
-	}
-
-	profiles, err := queryListString(tmAddr, invoicer.ListProfileActiveKey())
-	if err != nil {
-		return profile, err
-	}
-	found := false
-	for _, name := range profiles {
-		p, err := queryProfile(tmAddr, name)
-		if err != nil {
-			return profile, err
-		}
-		if bytes.Compare(p.Address[:], address[:]) == 0 {
-			profile = &p
-			found = true
-			break
-		}
-	}
-	if !found {
-		return profile, errors.New("Could not retreive profile from address")
-	}
-	return profile, nil
-}
-
 func contractOpenCmd(cmd *cobra.Command, args []string) error {
 	return invoiceCmd(invoicer.TBTxContractOpen, cmd, args)
 }
@@ -214,13 +157,16 @@ func expenseEditCmd(cmd *cobra.Command, args []string) error {
 
 func invoiceCmd(TBTx byte, cmd *cobra.Command, args []string) (err error) {
 	if len(args) != 1 {
-		return ErrCmdReqArg("amount<amt><cur>")
+		return trcmd.ErrCmdReqArg("amount<amt><cur>")
 	}
 	amountStr := args[0]
 
-	tmAddr := cmd.Parent().Flag("node").Value.String()
+	address, err := getAddress()
+	if err != nil {
+		return errors.Wrap(err, "Error loading address")
+	}
 
-	txBytes, err := trcmd.InvoiceTx(TBTx, tmAddr, amountStr)
+	txBytes, err := trcmd.InvoiceTx(TBTx, address, amountStr)
 	if err != nil {
 		return err
 	}
@@ -230,13 +176,16 @@ func invoiceCmd(TBTx byte, cmd *cobra.Command, args []string) (err error) {
 func paymentCmd(cmd *cobra.Command, args []string) error {
 	var receiver string
 	if len(args) != 1 {
-		return ErrCmdReqArg("receiver")
+		return trcmd.ErrCmdReqArg("receiver")
 	}
 	receiver = args[0]
 
-	tmAddr := cmd.Parent().Flag("node").Value.String()
+	address, err := getAddress()
+	if err != nil {
+		return errors.Wrap(err, "Error loading address")
+	}
 
-	txBytes, err := trcmd.PaymentTx(tmAddr, receiver)
+	txBytes, err := trcmd.PaymentTx(address, receiver)
 	if err != nil {
 		return err
 	}

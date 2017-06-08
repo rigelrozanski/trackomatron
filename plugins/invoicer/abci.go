@@ -47,22 +47,12 @@ func (inv *Invoicer) RunTx(store btypes.KVStore, ctx btypes.CallContext, txBytes
 
 	//Note that the zero position of txBytes contains the type-byte for the tx type
 	switch txBytes[0] {
-	case TBTxProfileOpen:
-		return runTxProfile(store, ctx, txBytes[1:], false, writeProfile)
-	case TBTxProfileEdit:
-		return runTxProfile(store, ctx, txBytes[1:], true, writeProfile)
-	case TBTxProfileDeactivate:
-		return runTxProfile(store, ctx, txBytes[1:], true, deactivateProfile)
-	case TBTxContractOpen:
-		return runTxInvoice(store, ctx, txBytes[1:], false)
-	case TBTxContractEdit:
-		return runTxInvoice(store, ctx, txBytes[1:], true)
-	case TBTxExpenseOpen:
-		return runTxInvoice(store, ctx, txBytes[1:], false)
-	case TBTxExpenseEdit:
-		return runTxInvoice(store, ctx, txBytes[1:], true)
+	case TBTxProfileOpen, TBTxProfileEdit, TBTxProfileDeactivate:
+		return runTxProfile(store, txBytes)
+	case TBTxContractOpen, TBTxContractEdit, TBTxExpenseOpen, TBTxExpenseEdit:
+		return runTxInvoice(store, txBytes)
 	case TBTxPayment:
-		return runTxPayment(store, ctx, txBytes[1:])
+		return runTxPayment(store, txBytes)
 	default:
 		return abci.ErrBaseEncodingError.AppendLog("Error decoding tx: bad prepended bytes")
 	}

@@ -1,6 +1,9 @@
 package invoicer
 
 import (
+	"bytes"
+	"errors"
+
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
 	cmn "github.com/tendermint/tmlibs/common"
@@ -143,4 +146,30 @@ func getListString(store btypes.KVStore, key []byte) ([]string, error) {
 func getListBytes(store btypes.KVStore, key []byte) ([][]byte, error) {
 	bytes := store.Get(key)
 	return GetListBytesFromWire(bytes)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func getProfileFromAddress(store btypes.KVStore, address []byte) (profile *types.Profile, err error) {
+
+	profiles, err := getListString(store, ListProfileActiveKey())
+	if err != nil {
+		return profile, err
+	}
+	found := false
+	for _, name := range profiles {
+		p, err := getProfile(store, name)
+		if err != nil {
+			return profile, err
+		}
+		if bytes.Compare(p.Address[:], address[:]) == 0 {
+			profile = &p
+			found = true
+			break
+		}
+	}
+	if !found {
+		return profile, errors.New("Could not retreive profile from address")
+	}
+	return profile, nil
 }

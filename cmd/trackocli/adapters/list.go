@@ -20,7 +20,7 @@ func (_ ListStringPresenter) MakeKey(str string) ([]byte, error) {
 func (_ ListStringPresenter) ParseData(raw []byte) (interface{}, error) {
 	var list []string
 	err := wire.ReadBinaryBytes(raw, &list)
-	return profile, err
+	return list, err
 }
 
 type ListBytesPresenter struct{}
@@ -36,5 +36,5 @@ func (_ ListBytesPresenter) MakeKey(str string) ([]byte, error) {
 func (_ ListBytesPresenter) ParseData(raw []byte) (interface{}, error) {
 	var list [][]byte
 	err := wire.ReadBinaryBytes(raw, &list)
-	return profile, err
+	return list, err
 }
