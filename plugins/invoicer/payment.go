@@ -7,6 +7,7 @@ import (
 	abci "github.com/tendermint/abci/types"
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
+
 	types "github.com/tendermint/trackomatron/types"
 )
 
@@ -28,14 +29,31 @@ func validatePayment(ctx types.Context) abci.Result {
 	}
 }
 
-func runTxPayment(store btypes.KVStore, ctx btypes.CallContext, txBytes []byte) (res abci.Result) {
+func runTxPayment(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 
 	// Decode tx
-	var payment = new(types.Payment)
-	err := wire.ReadBinaryBytes(txBytes, payment)
+	var tx = new(types.TxPayment)
+	err := wire.ReadBinaryBytes(txBytes[1:], tx)
 	if err != nil {
 		return abciErrDecodingTX(err)
 	}
+
+	//get the sender's address
+	profile, err := getProfileFromAddress(store, tx.SenderAddr)
+	if err != nil {
+		abciErrInternal(err)
+	}
+	sender := profile.Name
+
+	payment := types.NewPayment(
+		tx.IDs,
+		tx.TransactionID,
+		sender,
+		tx.Receiver,
+		tx.Amt,
+		tx.StartDate,
+		tx.EndDate,
+	)
 
 	//If there are no IDs provided in payment tx
 	// then populate them based on date

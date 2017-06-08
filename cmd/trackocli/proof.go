@@ -17,7 +17,7 @@ type ProofCommander struct {
 }
 
 func init() {
-	//Set the commands run function
+	//Register the custom commands with the proof state command
 	proofs.RegisterProofStateSubcommand(GetQueryProfileCmd)
 	proofs.RegisterProofStateSubcommand(GetQueryProfilesCmd)
 	proofs.RegisterProofStateSubcommand(GetQueryInvoiceCmd)
@@ -26,7 +26,9 @@ func init() {
 	proofs.RegisterProofStateSubcommand(GetQueryPaymentsCmd)
 }
 
-//nolint
+//nolint - These functions represent what is being called by the proof state commands
+// A funtion which returns a command is necessary because the ProofCommander
+// must be passed into the query functions
 func GetQueryInvoiceCmd(lp proofs.ProofCommander) *cobra.Command {
 	p := ProofCommander{lp}
 	cmd := trcmd.QueryInvoiceCmd
@@ -75,7 +77,7 @@ func (p ProofCommander) queryInvoiceCmd(cmd *cobra.Command, args []string) error
 }
 
 func (p ProofCommander) queryInvoicesCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryInvoicesCmd(cmd, args, p.queryListBytes, queryInvoice)
+	return trcmd.DoQueryInvoicesCmd(cmd, args, p.queryListBytes, p.queryInvoice)
 }
 
 func (p ProofCommander) queryProfileCmd(cmd *cobra.Command, args []string) error {
@@ -91,7 +93,7 @@ func (p ProofCommander) queryPaymentCmd(cmd *cobra.Command, args []string) error
 }
 
 func (p ProofCommander) queryPaymentsCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryPaymentsCmd(cmd, args, p.queryListString, queryPayment)
+	return trcmd.DoQueryPaymentsCmd(cmd, args, p.queryListString, p.queryPayment)
 }
 
 ///////////////////////////////////////////////

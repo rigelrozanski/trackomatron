@@ -55,7 +55,7 @@ type PaymentFlags struct {
 
 func (m PaymentTxMaker) Flags() (*flag.FlagSet, interface{}) {
 	fs, app := bcmd.AppFlagSet()
-	fs.AddFlagSet(trcmd.FSPayment)
+	fs.AddFlagSet(trcmd.FSTxPayment)
 	fs.String(trcmd.FlagReceiverName, "", "Name of the receiver of the payment")
 	return fs, &PaymentFlags{AppFlags: app}
 }
@@ -74,9 +74,9 @@ func (t PaymentTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (inter
 	data := flags.(*PaymentFlags)
 
 	receiver := viper.GetString(trcmd.FlagReceiverName)
-	tmAddr := viper.GetString(commands.NodeFlag)
+	senderAddr := pk.Address()
 
-	txBytes, err := trcmd.PaymentTx(tmAddr, receiver)
+	txBytes, err := trcmd.PaymentTx(senderAddr, receiver)
 	if err != nil {
 		return nil, err
 	}

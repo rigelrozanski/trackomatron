@@ -20,6 +20,7 @@ var (
 	abciErrGetInvoices        = abci.ErrUnknownRequest.AppendLog("Error retrieving active invoice list")
 	abciErrGetPayments        = abci.ErrUnknownRequest.AppendLog("Error retrieving payments list")
 	abciErrInvoiceMissing     = abci.ErrUnknownRequest.AppendLog("Error retrieving invoice to modify")
+	abciErrBadTypeByte        = abci.ErrUnknownRequest.AppendLog("Unknown prepended type byte")
 	abciErrInvoiceClosed      = abci.ErrUnauthorized.AppendLog("Cannot edit closed invoice")
 	abciErrOverPayment        = abci.ErrUnauthorized.AppendLog("Error this is an overpayment")
 	abciErrProfileInactive    = abci.ErrUnauthorized.AppendLog("Error profile is inactive")
@@ -31,11 +32,13 @@ func wrapErrDecodingState(err error) error {
 }
 
 func abciErrDecodingTX(err error) abci.Result {
-	//TODO check for stack tracing/implement
 	return abci.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 }
 
 func abciErrDecimal(err error) abci.Result {
-	//TODO check for stack tracing/implement
 	return abci.ErrBaseEncodingError.AppendLog("Error in decimal calculation: " + err.Error())
+}
+
+func abciErrInternal(err error) abci.Result {
+	return abci.ErrInternalError.AppendLog("Error: " + err.Error())
 }

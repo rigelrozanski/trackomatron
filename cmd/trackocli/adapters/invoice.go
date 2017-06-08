@@ -68,12 +68,18 @@ type InvoiceFlags struct {
 
 func (m InvoiceTxMaker) Flags() (*flag.FlagSet, interface{}) {
 	fs, app := bcmd.AppFlagSet()
-	fs.AddFlagSet(trcmd.FSInvoice)
+	fs.AddFlagSet(trcmd.FSTxInvoice)
 	fs.String(trcmd.FlagInvoiceAmount, "", "Name of the new invoice to open")
 
-	if m.TBTx == invoicer.TBTxExpenseOpen ||
-		m.TBTx == invoicer.TBTxExpenseEdit {
-		fs.AddFlagSet(trcmd.FSExpense)
+	//add additional flags, as necessary
+	switch m.TBTx {
+	case invoicer.TBTxExpenseOpen:
+		fs.AddFlagSet(trcmd.FSTxExpense)
+	case invoicer.TBTxExpenseEdit:
+		fs.AddFlagSet(trcmd.FSTxExpense)
+		fs.AddFlagSet(trcmd.FSTxInvoiceEdit)
+	case invoicer.TBTxContractEdit:
+		fs.AddFlagSet(trcmd.FSTxInvoiceEdit)
 	}
 
 	return fs, &InvoiceFlags{AppFlags: app}
@@ -93,9 +99,8 @@ func (t InvoiceTxReader) ReadTxJSON(data []byte, pk crypto.PubKey) (interface{},
 func (t InvoiceTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (interface{}, error) {
 	data := flags.(*InvoiceFlags)
 	amount := viper.GetString(trcmd.FlagInvoiceAmount)
-	tmAddr := viper.GetString(commands.NodeFlag)
 	senderAddr := pk.Address()
-	txBytes, err := trcmd.InvoiceTx(t.TBTx, senderAddr, tmAddr, amount)
+	txBytes, err := trcmd.InvoiceTx(t.TBTx, senderAddr, amount)
 	if err != nil {
 		return nil, err
 	}
