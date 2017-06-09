@@ -42,8 +42,8 @@ const (
 	//Light-client flags
 	//The flags replace what are arguments in the full node
 	FlagProfileName   = "profile-name"
-	FlagInvoiceAmount = "invoice-name"
-	FlagReceiverName  = "payment-name"
+	FlagInvoiceAmount = "invoice-amount"
+	FlagReceiverName  = "receiver-name"
 
 	///////////////////////////////////
 	// Tx Names
