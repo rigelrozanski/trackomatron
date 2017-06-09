@@ -11,7 +11,7 @@ var (
 
 	abciErrNoSender           = abci.ErrUnknownRequest.AppendLog("Senders profile doesn't exist")
 	abciErrNoReceiver         = abci.ErrUnknownRequest.AppendLog("Receiver profile doesn't exist")
-	abciErrProfileNonExistent = abci.ErrUnknownRequest.AppendLog("Cannot modify a non-existent profile")
+	abciErrProfileNonExistent = abci.ErrUnknownRequest.AppendLog("Cannot modify a non-existent or deactivated profile")
 	abciErrProfileExists      = abci.ErrInternalError.AppendLog("Cannot create an already existing profile")
 	abciErrDupInvoice         = abci.ErrInternalError.AppendLog("Duplicate invoice, edit the invoice notes to make them unique")
 	abciErrNoProfile          = abci.ErrUnknownRequest.AppendLog("Error retrieving profile from store")
