@@ -1,6 +1,6 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 
-all: get_vendor_deps test install
+all: get_vendor_deps install
 
 test: test_lightcli test_heavycli test_unit
 
