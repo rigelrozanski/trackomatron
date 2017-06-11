@@ -9,6 +9,8 @@ machine:
     localhost: 127.0.0.1
 
 dependencies:
+  pre:
+    - sudo apt-get update; sudo apt-get install expect
   override:
     - go get github.com/Masterminds/glide
     - go version

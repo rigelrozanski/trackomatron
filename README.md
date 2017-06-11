@@ -133,7 +133,12 @@ due between two parties.
 ### Testing
 Comprehensive testing is performed in bash scripts found in `test/` check them
 out!  These files can give you a pretty good idea of to used some of the nuance
-capabilities of trackomatron. In addition the golang test suite is utilized
+capabilities of trackomatron. Note that these tests require the `expect` package
+which can be installed with
+```
+sudo apt-get update; sudo apt-get install expect
+```
+In addition the golang test suite is utilized
 throughout for unit testing, this testing is presented in the "\*\_test.go"
 files throughout the repository.
 

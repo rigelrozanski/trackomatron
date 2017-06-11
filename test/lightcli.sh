@@ -57,7 +57,7 @@ DONE
 
 initLightCli(){
     expect <<- DONE
-      spawn basecli init --chainid test_chain_id --node tcp://localhost:46657
+      spawn trackocli init --chainid test_chain_id --node tcp://localhost:46657
       expect "Is this valid (y/n)?" 
       send -- "y\r"
       expect eof
