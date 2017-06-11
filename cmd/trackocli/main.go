@@ -59,6 +59,6 @@ func main() {
 		proxy.RootCmd,
 	)
 
-	cmd := cli.PrepareMainCmd(TrackoCli, "BC", os.ExpandEnv("$HOME/.basecli"))
+	cmd := cli.PrepareMainCmd(TrackoCli, "TRC", os.ExpandEnv("$HOME/.trackocli"))
 	cmd.Execute()
 }

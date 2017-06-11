@@ -2,7 +2,7 @@ PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 
 all: get_vendor_deps install
 
-test: test_lightcli test_heavycli test_unit
+test: install test_lightcli test_heavycli test_unit
 
 test_lightcli: 
 	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \

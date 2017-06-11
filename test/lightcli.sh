@@ -18,7 +18,7 @@ oneTimeSetUp(){
     
     GENKEY=$(trackocli keys get ${ACCOUNTS[0]} -o json | jq .pubkey.data)
 
-    #change the genesis to satoshi
+    #change the genesis to the first account
     GENJSON=$(cat $TR/genesis.json)
     echo $GENJSON | jq '.app_options.accounts[0].pub_key.data='$GENKEY > $TR/genesis.json 
 
@@ -65,26 +65,20 @@ DONE
 }
 
 
-tx100(){
-    if [ -z "$3" ]; then 
-        return 
-    fi 
-    expect <<- DONE
-      spawn trackocli tx $1 --name $2 \
-          --amount 100mycoin --fee 0mycoin --sequence $3
-      expect "Please enter passphrase for $2:" 
-      send -- "passweirdo\r"
-      expect eof
-DONE
-}
-
 tx(){
     if [ -z "$3" ]; then 
         return 
     fi 
+    txAmount "$1" "$2" "$3" "1"
+}
+
+txAmount(){
+    if [ -z "$4" ]; then 
+        return 
+    fi 
     expect <<- DONE
       spawn trackocli tx $1 --name $2 \
-          --amount 1mycoin --fee 0mycoin --sequence $3
+          --amount $4mycoin --fee 0mycoin --sequence $3
       expect "Please enter passphrase for $2:" 
       send -- "passweirdo\r"
       expect eof
@@ -99,10 +93,6 @@ seqUp(){
     SEQ[$1]=$((${SEQ[$1]}+1))
 }
 
-
-#testSetupKeys(){
-#}
-
 testOpeningProfiles(){
     NAMES=(AllInBits Bucky Satoshi Dummy)
     for i in "${!NAMES[@]}"; do 
@@ -110,7 +100,7 @@ testOpeningProfiles(){
         ADDR[$i]=$(trackocli keys get ${ACCOUNTS[$i]} --output=json | jq .address | tr -d '"')
         
         if [ "$i" != "0" ]; then
-            err=$((tx100 "send --to ${ADDR[$i]}" "${ACCOUNTS[0]}" ${SEQ[0]})  2>&1 > /dev/null)
+            err=$((txAmount "send --to ${ADDR[$i]}" "${ACCOUNTS[0]}" ${SEQ[0]} "100")  2>&1 > /dev/null)
             assertNull "Error Non-Null Line $LINENO $err" "$err"
             seqUp 0
         fi 

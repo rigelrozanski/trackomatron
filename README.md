@@ -16,6 +16,7 @@ are separated into three main categories:
   - Send expense invoices 
  - Paying invoices
   - Bulk payment of invoices from a single receiver
+
 The querying information from the blockchain allows users so sort and retrieve profiles, 
 invoices by payments in bulk, additional utility is provided to allow to generate quick totals 
 of amount due between parties.  
@@ -32,27 +33,67 @@ These commands will generate the binaries in `$GOPATH/bin` named `tracko` and
 `trackocli` representing the full and light client respectively.  
 
 ### Example
-First generate a couple demonstration keys using the light-client:
-```
-trackocli keys new bobby
-trackocli keys new foobar
-```
 
-Open a second window, perform the initialization commands:
-
+#### Initialize/reset trackomatron, but don't start the chain
 ```
 tracko init
 tracko unsafe_reset_all
+trackocli init --force-reset
 ```
 
-Modify the genesis file in `~/.tracko/genesis.json` to have the address and public key of 
-the `bobby` key you created in the first window. This information can be accessed with 
-`trackcli keys get bobby --output=json`. Finally in this second window start the full node
-server with `tracko start`.
+#### Set up your trackocli with some keys
+```
+trackocli keys new bobby
+trackocli keys new buddy
+```
 
-Great! Now we can use commands from the light client to send invoices between bobby and foobar 
+#### Update genesis so you are rich
+```
+trackocli keys get bobby -o json
+vi ~/.tracko/genesis.json
+-> cut/paste your pubkey from the results above
+```
+or alternatively:  
+```
+GENKEY=`trackocli keys get bobby -o json | jq .pubkey.data`
+GENJSON=`cat ~/.tracko/genesis.json`
+echo $GENJSON | jq '.app_options.accounts[0].pub_key.data='$GENKEY > ~/.tracko/genesis.json 
+```
 
-...to be continued
+#### Start the tracko node
+```
+tracko start
+```
+
+#### In a second terminal connect your trackocli the first time
+```
+trackocli init --chainid=test_chain_id --node=tcp://localhost:46657
+```
+
+#### Send some mycoins over to your pal so they can open a profile
+```
+ME=`trackocli keys get bobby -o json | jq .address | tr -d '"'`
+YOU=`trackocli keys get buddy -o json | jq .address | tr -d '"'`
+trackocli tx send --name=bobby --amount=1000mycoin --fee=0mycoin --sequence 1 --to $YOU
+```
+
+#### Open up some profiles
+```
+trackocli tx profile-open --profile-name=b0b --name=bobby --amount=1mycoin --fee=0mycoin --sequence=2
+trackocli tx profile-open --profile-name=bud --name=buddy --amount=1mycoin --fee=0mycoin --sequence=1
+```
+
+
+#### Send an invoice to your pal! Then list the open invoices
+```
+trackocli tx contract-open --invoice-amount=99.99USD --date=2017-01-01 --to=bud --notes=thanks! --name=bobby --amount=1mycoin --fee=0mycoin --sequence=3
+trackocli proof state invoices | jq
+```
+
+Great! Now you're ready to start using trackomatron to start invoicing all your friends!
+
+#### Close up shop
+In the first terminal window hit `ctrl-c`  
 
 ### Commands
 
@@ -65,7 +106,7 @@ Transaction commands can be executed from either a full operation node
 | light  | `trackocli proof state [command]` | `trackocli tx [command]` |
 
 The `--help` flag can be used from any command to list available flags/args and
-their usage 
+their full usage. An overview of the commands available are as follows: 
 
 Query
  - invoice     Query an invoice by ID
@@ -84,6 +125,10 @@ Transaction
  - profile-deactivate Deactivate and existing profile
  - profile-edit       Edit an existing profile
  - profile-open       Open a profile for sending/receiving invoices
+
+One cool flag I will mention to check out is the `--sum` flag used for querying
+invoices.  This flag allows you to generate a total of all the invoice amounts
+due between two parties.
 
 ### Testing
 Comprehensive testing is performed in bash scripts found in `test/` check them
