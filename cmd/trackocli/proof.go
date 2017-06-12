@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
-
 	"github.com/spf13/cobra"
 
 	"github.com/tendermint/light-client/commands/proofs"
@@ -11,134 +9,125 @@ import (
 	"github.com/tendermint/trackomatron/types"
 )
 
-//nolint
-type ProofCommander struct {
-	proofs.ProofCommander
-}
-
 func init() {
 	//Register the custom commands with the proof state command
-	proofs.RegisterProofStateSubcommand(GetQueryProfileCmd)
-	proofs.RegisterProofStateSubcommand(GetQueryProfilesCmd)
-	proofs.RegisterProofStateSubcommand(GetQueryInvoiceCmd)
-	proofs.RegisterProofStateSubcommand(GetQueryInvoicesCmd)
-	proofs.RegisterProofStateSubcommand(GetQueryPaymentCmd)
-	proofs.RegisterProofStateSubcommand(GetQueryPaymentsCmd)
+	proofs.RegisterProofStateSubcommand(GetQueryProfileCmd())
+	proofs.RegisterProofStateSubcommand(GetQueryProfilesCmd())
+	proofs.RegisterProofStateSubcommand(GetQueryInvoiceCmd())
+	proofs.RegisterProofStateSubcommand(GetQueryInvoicesCmd())
+	proofs.RegisterProofStateSubcommand(GetQueryPaymentCmd())
+	proofs.RegisterProofStateSubcommand(GetQueryPaymentsCmd())
 }
 
 //nolint - These functions represent what is being called by the proof state commands
 // A funtion which returns a command is necessary because the ProofCommander
 // must be passed into the query functions
-func GetQueryInvoiceCmd(lp proofs.ProofCommander) *cobra.Command {
-	p := ProofCommander{lp}
+func GetQueryInvoiceCmd() *cobra.Command {
 	cmd := trcmd.QueryInvoiceCmd
-	cmd.RunE = p.queryInvoiceCmd
+	cmd.RunE = queryInvoiceCmd
 	cmd.SilenceUsage = true
 	return cmd
 }
-func GetQueryInvoicesCmd(lp proofs.ProofCommander) *cobra.Command {
-	p := ProofCommander{lp}
+func GetQueryInvoicesCmd() *cobra.Command {
 	cmd := trcmd.QueryInvoicesCmd
-	cmd.RunE = p.queryInvoicesCmd
+	cmd.RunE = queryInvoicesCmd
 	cmd.SilenceUsage = true
 	return cmd
 }
-func GetQueryProfileCmd(lp proofs.ProofCommander) *cobra.Command {
-	p := ProofCommander{lp}
+func GetQueryProfileCmd() *cobra.Command {
 	cmd := trcmd.QueryProfileCmd
-	cmd.RunE = p.queryProfileCmd
+	cmd.RunE = queryProfileCmd
 	cmd.SilenceUsage = true
 	return cmd
 }
-func GetQueryProfilesCmd(lp proofs.ProofCommander) *cobra.Command {
-	p := ProofCommander{lp}
+func GetQueryProfilesCmd() *cobra.Command {
 	cmd := trcmd.QueryProfilesCmd
-	cmd.RunE = p.queryProfilesCmd
+	cmd.RunE = queryProfilesCmd
 	cmd.SilenceUsage = true
 	return cmd
 }
-func GetQueryPaymentCmd(lp proofs.ProofCommander) *cobra.Command {
-	p := ProofCommander{lp}
+func GetQueryPaymentCmd() *cobra.Command {
 	cmd := trcmd.QueryPaymentCmd
-	cmd.RunE = p.queryPaymentCmd
+	cmd.RunE = queryPaymentCmd
 	cmd.SilenceUsage = true
 	return cmd
 }
-func GetQueryPaymentsCmd(lp proofs.ProofCommander) *cobra.Command {
-	p := ProofCommander{lp}
+func GetQueryPaymentsCmd() *cobra.Command {
 	cmd := trcmd.QueryPaymentsCmd
-	cmd.RunE = p.queryPaymentsCmd
+	cmd.RunE = queryPaymentsCmd
 	cmd.SilenceUsage = true
 	return cmd
 }
 
-func (p ProofCommander) queryInvoiceCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryInvoiceCmd(cmd, args, p.queryInvoice)
+func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
+	return trcmd.DoQueryInvoiceCmd(cmd, args, queryInvoice)
 }
 
-func (p ProofCommander) queryInvoicesCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryInvoicesCmd(cmd, args, p.queryListBytes, p.queryInvoice)
+func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
+	return trcmd.DoQueryInvoicesCmd(cmd, args, queryListBytes, queryInvoice)
 }
 
-func (p ProofCommander) queryProfileCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryProfileCmd(cmd, args, p.queryProfile)
+func queryProfileCmd(cmd *cobra.Command, args []string) error {
+	return trcmd.DoQueryProfileCmd(cmd, args, queryProfile)
 }
 
-func (p ProofCommander) queryProfilesCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryProfilesCmd(cmd, args, p.queryListString)
+func queryProfilesCmd(cmd *cobra.Command, args []string) error {
+	return trcmd.DoQueryProfilesCmd(cmd, args, queryListString)
 }
 
-func (p ProofCommander) queryPaymentCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryPaymentCmd(cmd, args, p.queryPayment)
+func queryPaymentCmd(cmd *cobra.Command, args []string) error {
+	return trcmd.DoQueryPaymentCmd(cmd, args, queryPayment)
 }
 
-func (p ProofCommander) queryPaymentsCmd(cmd *cobra.Command, args []string) error {
-	return trcmd.DoQueryPaymentsCmd(cmd, args, p.queryListString, p.queryPayment)
+func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
+	return trcmd.DoQueryPaymentsCmd(cmd, args, queryListString, queryPayment)
 }
 
 ///////////////////////////////////////////////
 
-func (p ProofCommander) queryProfile(name string) (profile types.Profile, err error) {
+func queryProfile(name string) (profile types.Profile, err error) {
 	if len(name) == 0 {
 		return profile, trcmd.ErrBadQuery("name")
 	}
-	proof, err := p.GetProof(trcmd.AppAdapterProfile, name, 0) //0 height means latest block
+	key := invoicer.ProfileKey(name)
+	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
 	return invoicer.GetProfileFromWire(proof.Data())
 }
 
-func (p ProofCommander) queryPayment(transactionID string) (payment types.Payment, err error) {
+func queryPayment(transactionID string) (payment types.Payment, err error) {
 	if len(transactionID) == 0 {
 		return payment, trcmd.ErrBadQuery("transactionID")
 	}
-	proof, err := p.GetProof(trcmd.AppAdapterPayment, transactionID, 0) //0 height means latest block
+	key := invoicer.PaymentKey(transactionID)
+	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
 	return invoicer.GetPaymentFromWire(proof.Data())
 }
 
-func (p ProofCommander) queryInvoice(id []byte) (invoice types.Invoice, err error) {
-	idHexStr := "0x" + hex.EncodeToString(id)
-	proof, err := p.GetProof(trcmd.AppAdapterInvoice, idHexStr, 0) //0 height means latest block
+func queryInvoice(id []byte) (invoice types.Invoice, err error) {
+	key := invoicer.InvoiceKey(id)
+	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
 	return invoicer.GetInvoiceFromWire(proof.Data())
 }
 
-func (p ProofCommander) queryListString(key []byte) (list []string, err error) {
-	proof, err := p.GetProof(trcmd.AppAdapterListString, string(key), 0) //0 height means latest block
+func queryListString(key []byte) (list []string, err error) {
+	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
 	return invoicer.GetListStringFromWire(proof.Data())
 }
 
-func (p ProofCommander) queryListBytes(key []byte) (list [][]byte, err error) {
-	proof, err := p.GetProof(trcmd.AppAdapterListBytes, string(key), 0) //0 height means latest block
+func queryListBytes(key []byte) (list [][]byte, err error) {
+	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}

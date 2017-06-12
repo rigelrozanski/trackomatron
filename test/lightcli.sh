@@ -7,8 +7,10 @@ oneTimeSetUp(){
     tracko init
     tracko unsafe_reset_all
 
-    LC=~/.trackolightcli
+    LC=~/.trackocli
+    TMPDIR=(/tmp/tracko)
     rm -rf $LC
+    rm -rf $TMPDIR
     export BCHOME=$LC
     
     ACCOUNTS=(jae ethan craig rigel)
@@ -36,7 +38,7 @@ oneTimeSetUp(){
 oneTimeTearDown() {
     # close tendermint/clean temp files
     rm -rf $LC
-    rm -rf /tmp/tracko/
+    rm -rf $TMPDIR
     kill -9 $pid_basecoin
     echo "cleaning up bash test"
 }
@@ -52,15 +54,17 @@ newKey(){
       expect "Repeat the passphrase:"
       send -- "passweirdo\r"
       expect eof
+      catch wait result
 DONE
 }
 
 initLightCli(){
     expect <<- DONE
-      spawn trackocli init --chainid test_chain_id --node tcp://localhost:46657
+      spawn trackocli init --chainid=test_chain_id --node=tcp://localhost:46657
       expect "Is this valid (y/n)?" 
       send -- "y\r"
       expect eof
+      catch wait result
 DONE
 }
 
@@ -82,6 +86,7 @@ txAmount(){
       expect "Please enter passphrase for $2:" 
       send -- "passweirdo\r"
       expect eof
+      catch wait result
 DONE
 }
 
@@ -168,7 +173,7 @@ testContractInvoice(){
     assertNull "Error Non-Null Line $LINENO $err" "$err"
     CUR2=$(trackocli proof state invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
     
-    assertNotEquals 'contract invoice currency should have been edited' "$CUR1" "$CUR2"
+    assertNotEquals "contract invoice currency should have been edited $CUR1 $CUR2" "$CUR1" "$CUR2"
 
     #pay the contract invoice
     err=$((tx "payment --receiver-name=${NAMES[1]} --ids=0x$ID --paid=0.5BTC --date=2017-01-01 --tx-id=FOOBTC-TX-01" \
@@ -192,26 +197,25 @@ testContractInvoice(){
 
 testContractExpense(){
     #generate working directories for this test
-    DIR1=(/tmp/tracko)
-    DIR2=($DIR1/retrieved)
-    mkdir $DIR1 ; mkdir $DIR2
+    DIR=($TMPDIR/retrieved)
+    mkdir $TMPDIR ; mkdir $DIR
 
     #download an image, we'll pretend this is a receipt
-    wget -q -O $DIR1/invoicerDoc.png \
+    wget -q -O $TMPDIR/invoicerDoc.png \
         https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_120x44dp.png
 
     #Open receipt
-    err=$((tx "expense-open --invoice-amount=99.99USD --date=2017-01-01 --receipt=$DIR1/invoicerDoc.png --taxes=3.00USD --to=AllInBits --notes=transportation" \
+    err=$((tx "expense-open --invoice-amount=99.99USD --date=2017-01-01 --receipt=$TMPDIR/invoicerDoc.png --taxes=3.00USD --to=AllInBits --notes=transportation" \
         ${ACCOUNTS[1]} ${SEQ[1]}) 2>&1 > /dev/null)
     seqUp 1 
     assertNull "Error Non-Null Line $LINENO $err" "$err"
    
     #Download receipt from query
     ID2=$(trackocli proof state invoices | jq .[1][1].ID | tr -d '"')
-    err=$(trackocli proof state invoice 0x$ID2 --download-expense=$DIR2 2>&1 > /dev/null)
+    err=$(trackocli proof state invoice 0x$ID2 --download-expense=$DIR 2>&1 > /dev/null)
     assertNull "Error Non-Null Line $LINENO $err" "$err"
     
-    assertTrue "Receipt didn't download from query" "[ -f $DIR2/invoicerDoc.png ]"
+    assertTrue "Receipt didn't download from query" "[ -f $DIR/invoicerDoc.png ]"
 }
 
 testSums(){
