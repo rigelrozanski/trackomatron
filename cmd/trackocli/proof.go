@@ -90,7 +90,7 @@ func queryProfile(name string) (profile types.Profile, err error) {
 		return profile, trcmd.ErrBadQuery("name")
 	}
 	key := invoicer.ProfileKey(name)
-	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := proofs.StateGetProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func queryPayment(transactionID string) (payment types.Payment, err error) {
 		return payment, trcmd.ErrBadQuery("transactionID")
 	}
 	key := invoicer.PaymentKey(transactionID)
-	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := proofs.StateGetProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
@@ -111,7 +111,7 @@ func queryPayment(transactionID string) (payment types.Payment, err error) {
 
 func queryInvoice(id []byte) (invoice types.Invoice, err error) {
 	key := invoicer.InvoiceKey(id)
-	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := proofs.StateGetProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
@@ -119,7 +119,7 @@ func queryInvoice(id []byte) (invoice types.Invoice, err error) {
 }
 
 func queryListString(key []byte) (list []string, err error) {
-	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := proofs.StateListProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}
@@ -127,7 +127,7 @@ func queryListString(key []byte) (list []string, err error) {
 }
 
 func queryListBytes(key []byte) (list [][]byte, err error) {
-	proof, err := proofs.StateProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := proofs.StateListProverCommander.GetProof(key, 0) //0 height means latest block
 	if err != nil {
 		return
 	}

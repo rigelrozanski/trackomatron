@@ -1,5 +1,5 @@
 hash: 23074d244d6f47c105ea888d40899f0834dd078060e3be092f63a1b6dc2d3011
-updated: 2017-06-12T18:54:55.376945062-04:00
+updated: 2017-06-13T00:11:42.133501988-04:00
 imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
@@ -143,7 +143,7 @@ imports:
   - data
   - data/base58
 - name: github.com/tendermint/light-client
-  version: 9b6427327a4dfc728cc9d54e6b13c71ca50e24dd
+  version: 5777c24d8415c417b936774e3db7fcc8c1e58df8
   subpackages:
   - certifiers
   - certifiers/client
@@ -237,7 +237,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 0c68d6e2f2f40f189c60338c1895d7060ab27117
+  version: a94a7ac054dc76e5ab6cf170a9d82faba8aaf33f
   subpackages:
   - codes
   - credentials
