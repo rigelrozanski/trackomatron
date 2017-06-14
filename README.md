@@ -103,7 +103,7 @@ Transaction commands can be executed from either a full operation node
 | Client | Query | Transaction |
 |-----|-----|-----|
 | heavy  | `tracko query [command]` | `tracko tx invoicer [command]` |
-| light  | `trackocli proof state [command]` | `trackocli tx [command]` |
+| light  | `trackocli query app [command]` | `trackocli tx [command]` |
 
 The `--help` flag can be used from any command to list available flags/args and
 their full usage. An overview of the commands available are as follows: 

@@ -29,20 +29,9 @@ func main() {
 	commands.AddBasicFlags(TrackoCli)
 
 	//initialize proofs and txs default basecoin behaviour
-	proofs.StateGetPresenters.Register("account", bcmd.AccountPresenter{})
+	//proofs.StateGetPresenters.Register("account", bcmd.AccountPresenter{})
 	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
 	txs.Register("send", bcmd.SendTxMaker{})
-
-	//register invoicer plugin flags
-	proofs.StateGetPresenters.Register(trcmd.AppAdapterProfile, adapters.ProfilePresenter{})
-	proofs.StateGetPresenters.Register(trcmd.AppAdapterInvoice, adapters.InvoicePresenter{})
-	proofs.StateGetPresenters.Register(trcmd.AppAdapterPayment, adapters.PaymentPresenter{})
-
-	//register lists
-	proofs.StateListPresenters.Register(trcmd.AppAdapterListProfileActive, adapters.ListProfileActivePresenter{})
-	proofs.StateListPresenters.Register(trcmd.AppAdapterListProfileInactive, adapters.ListProfileInactivePresenter{})
-	proofs.StateListPresenters.Register(trcmd.AppAdapterListPayment, adapters.ListPaymentPresenter{})
-	proofs.StateListPresenters.Register(trcmd.AppAdapterListInvoice, adapters.ListInvoicePresenter{})
 
 	txs.Register(trcmd.TxNameProfileOpen, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileOpen})
 	txs.Register(trcmd.TxNameProfileEdit, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileEdit})

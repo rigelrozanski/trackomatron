@@ -1,5 +1,5 @@
 hash: 23074d244d6f47c105ea888d40899f0834dd078060e3be092f63a1b6dc2d3011
-updated: 2017-06-13T00:11:42.133501988-04:00
+updated: 2017-06-14T01:41:24.812266431-04:00
 imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
@@ -30,7 +30,7 @@ imports:
 - name: github.com/go-stack/stack
   version: 7a2f19628aabfe68f0766b59e74d6315f8347d22
 - name: github.com/golang/protobuf
-  version: 5a0f697c9ed9d68fef0116532c6e05cfeae00e55
+  version: e325f446bebc2998605911c0a2650d9920361d4a
   subpackages:
   - proto
   - ptypes/any
@@ -135,15 +135,13 @@ imports:
   - keys/server
   - keys/server/types
   - keys/storage/filestorage
-- name: github.com/tendermint/go-data
-  version: e7fcc6d081ec8518912fcdc103188275f83a3ee5
 - name: github.com/tendermint/go-wire
   version: 5f88da3dbc1a72844e6dfaf274ce87f851d488eb
   subpackages:
   - data
   - data/base58
 - name: github.com/tendermint/light-client
-  version: 5777c24d8415c417b936774e3db7fcc8c1e58df8
+  version: d993d8a9ba6cb51f05faf6e527016288e38c2853
   subpackages:
   - certifiers
   - certifiers/client
@@ -201,7 +199,7 @@ imports:
   - log
   - merkle
 - name: golang.org/x/crypto
-  version: e7ba82683099cae71475961448ab8f903ea77c26
+  version: 850760c427c516be930bc91280636328f1a62286
   subpackages:
   - curve25519
   - nacl/box
@@ -212,7 +210,7 @@ imports:
   - ripemd160
   - salsa20/salsa
 - name: golang.org/x/net
-  version: 1a68b1313cf4ad7778376e82641197b60c02f65c
+  version: dfe83d419c9403b40b19d08cdba2afec27b002f7
   subpackages:
   - context
   - http2
@@ -226,7 +224,7 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 210eee5cf7323015d097341bcf7166130d001cd8
+  version: 3491b61b9edc56653ad4333e605e2908e46a036b
   subpackages:
   - secure/bidirule
   - transform
@@ -237,7 +235,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: a94a7ac054dc76e5ab6cf170a9d82faba8aaf33f
+  version: 1ab4adf22dbaf4eb6cfd01eaa711612ffcf87890
   subpackages:
   - codes
   - credentials
@@ -258,11 +256,11 @@ imports:
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
 - name: github.com/stretchr/testify

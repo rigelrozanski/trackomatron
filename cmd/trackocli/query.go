@@ -3,62 +3,40 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/tendermint/light-client/commands/proofs"
+	lc "github.com/tendermint/light-client"
+	"github.com/tendermint/light-client/commands"
+	cmdproofs "github.com/tendermint/light-client/commands/proofs"
+	"github.com/tendermint/light-client/proofs"
 	trcmd "github.com/tendermint/trackomatron/commands"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 	"github.com/tendermint/trackomatron/types"
 )
 
+var appCmd = &cobra.Command{
+	Use:   "app",
+	Short: "Handle custom app proofs for state of abci app",
+}
+
 func init() {
+	//Set the commands run function
+	trcmd.QueryInvoiceCmd.RunE = queryInvoiceCmd
+	trcmd.QueryInvoicesCmd.RunE = queryInvoicesCmd
+	trcmd.QueryProfileCmd.RunE = queryProfileCmd
+	trcmd.QueryProfilesCmd.RunE = queryProfilesCmd
+	trcmd.QueryPaymentCmd.RunE = queryPaymentCmd
+	trcmd.QueryPaymentsCmd.RunE = queryPaymentsCmd
+
 	//Register the custom commands with the proof state command
-	proofs.RegisterProofStateSubcommand(GetQueryProfileCmd())
-	proofs.RegisterProofStateSubcommand(GetQueryProfilesCmd())
-	proofs.RegisterProofStateSubcommand(GetQueryInvoiceCmd())
-	proofs.RegisterProofStateSubcommand(GetQueryInvoicesCmd())
-	proofs.RegisterProofStateSubcommand(GetQueryPaymentCmd())
-	proofs.RegisterProofStateSubcommand(GetQueryPaymentsCmd())
+	appCmd.AddCommand(trcmd.QueryProfileCmd)
+	appCmd.AddCommand(trcmd.QueryProfilesCmd)
+	appCmd.AddCommand(trcmd.QueryInvoiceCmd)
+	appCmd.AddCommand(trcmd.QueryInvoicesCmd)
+	appCmd.AddCommand(trcmd.QueryPaymentCmd)
+	appCmd.AddCommand(trcmd.QueryPaymentsCmd)
+	cmdproofs.RootCmd.AddCommand(appCmd)
 }
 
-//nolint - These functions represent what is being called by the proof state commands
-// A funtion which returns a command is necessary because the ProofCommander
-// must be passed into the query functions
-func GetQueryInvoiceCmd() *cobra.Command {
-	cmd := trcmd.QueryInvoiceCmd
-	cmd.RunE = queryInvoiceCmd
-	cmd.SilenceUsage = true
-	return cmd
-}
-func GetQueryInvoicesCmd() *cobra.Command {
-	cmd := trcmd.QueryInvoicesCmd
-	cmd.RunE = queryInvoicesCmd
-	cmd.SilenceUsage = true
-	return cmd
-}
-func GetQueryProfileCmd() *cobra.Command {
-	cmd := trcmd.QueryProfileCmd
-	cmd.RunE = queryProfileCmd
-	cmd.SilenceUsage = true
-	return cmd
-}
-func GetQueryProfilesCmd() *cobra.Command {
-	cmd := trcmd.QueryProfilesCmd
-	cmd.RunE = queryProfilesCmd
-	cmd.SilenceUsage = true
-	return cmd
-}
-func GetQueryPaymentCmd() *cobra.Command {
-	cmd := trcmd.QueryPaymentCmd
-	cmd.RunE = queryPaymentCmd
-	cmd.SilenceUsage = true
-	return cmd
-}
-func GetQueryPaymentsCmd() *cobra.Command {
-	cmd := trcmd.QueryPaymentsCmd
-	cmd.RunE = queryPaymentsCmd
-	cmd.SilenceUsage = true
-	return cmd
-}
-
+//These functions represent what is being called by the query app commands
 func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 	return trcmd.DoQueryInvoiceCmd(cmd, args, queryInvoice)
 }
@@ -85,12 +63,19 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
 
 ///////////////////////////////////////////////
 
+func getProof(key []byte) (lc.Proof, error) {
+	node := commands.GetNode()
+	prover := proofs.NewAppProver(node)
+	height := cmdproofs.GetHeight()
+	return cmdproofs.GetProof(node, prover, key, height)
+}
+
 func queryProfile(name string) (profile types.Profile, err error) {
 	if len(name) == 0 {
 		return profile, trcmd.ErrBadQuery("name")
 	}
 	key := invoicer.ProfileKey(name)
-	proof, err := proofs.StateGetProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := getProof(key)
 	if err != nil {
 		return
 	}
@@ -102,7 +87,7 @@ func queryPayment(transactionID string) (payment types.Payment, err error) {
 		return payment, trcmd.ErrBadQuery("transactionID")
 	}
 	key := invoicer.PaymentKey(transactionID)
-	proof, err := proofs.StateGetProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := getProof(key)
 	if err != nil {
 		return
 	}
@@ -111,7 +96,7 @@ func queryPayment(transactionID string) (payment types.Payment, err error) {
 
 func queryInvoice(id []byte) (invoice types.Invoice, err error) {
 	key := invoicer.InvoiceKey(id)
-	proof, err := proofs.StateGetProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := getProof(key)
 	if err != nil {
 		return
 	}
@@ -119,7 +104,7 @@ func queryInvoice(id []byte) (invoice types.Invoice, err error) {
 }
 
 func queryListString(key []byte) (list []string, err error) {
-	proof, err := proofs.StateListProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := getProof(key)
 	if err != nil {
 		return
 	}
@@ -127,7 +112,7 @@ func queryListString(key []byte) (list []string, err error) {
 }
 
 func queryListBytes(key []byte) (list [][]byte, err error) {
-	proof, err := proofs.StateListProverCommander.GetProof(key, 0) //0 height means latest block
+	proof, err := getProof(key)
 	if err != nil {
 		return
 	}

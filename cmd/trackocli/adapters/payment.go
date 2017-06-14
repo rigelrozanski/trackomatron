@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/viper"
 
 	crypto "github.com/tendermint/go-crypto"
-	wire "github.com/tendermint/go-wire"
 	lightclient "github.com/tendermint/light-client"
 	"github.com/tendermint/light-client/commands"
 	"github.com/tendermint/light-client/commands/txs"
@@ -15,23 +14,7 @@ import (
 
 	trcmd "github.com/tendermint/trackomatron/commands"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
-	trtypes "github.com/tendermint/trackomatron/types"
 )
-
-type PaymentPresenter struct{}
-
-func (_ PaymentPresenter) MakeKey(str string) ([]byte, error) {
-	key := invoicer.PaymentKey(str)
-	return key, nil
-}
-
-func (_ PaymentPresenter) ParseData(raw []byte) (interface{}, error) {
-	var payment trtypes.Payment
-	err := wire.ReadBinaryBytes(raw, &payment)
-	return payment, err
-}
-
-/**** build out the tx ****/
 
 var (
 	_ txs.ReaderMaker      = PaymentTxMaker{}

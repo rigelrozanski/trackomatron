@@ -25,33 +25,39 @@ import (
 var (
 	//commands
 	QueryInvoiceCmd = &cobra.Command{
-		Use:   "invoice [id]",
-		Short: "Query an invoice by ID",
+		Use:          "invoice [id]",
+		Short:        "Query an invoice by ID",
+		SilenceUsage: true,
 	}
 
 	QueryInvoicesCmd = &cobra.Command{
-		Use:   "invoices",
-		Short: "Query all invoice",
+		Use:          "invoices",
+		Short:        "Query all invoice",
+		SilenceUsage: true,
 	}
 
 	QueryProfileCmd = &cobra.Command{
-		Use:   "profile [name]",
-		Short: "Query a profile",
+		Use:          "profile [name]",
+		Short:        "Query a profile",
+		SilenceUsage: true,
 	}
 
 	QueryProfilesCmd = &cobra.Command{
-		Use:   "profiles",
-		Short: "List all open profiles",
+		Use:          "profiles",
+		Short:        "List all open profiles",
+		SilenceUsage: true,
 	}
 
 	QueryPaymentCmd = &cobra.Command{
-		Use:   "payment [id]",
-		Short: "List historical payment",
+		Use:          "payment [id]",
+		Short:        "List historical payment",
+		SilenceUsage: true,
 	}
 
 	QueryPaymentsCmd = &cobra.Command{
-		Use:   "payments",
-		Short: "List historical payments",
+		Use:          "payments",
+		Short:        "List historical payments",
+		SilenceUsage: true,
 	}
 
 	//exposed flagsets

@@ -117,7 +117,7 @@ testOpeningProfiles(){
     done
     
     #check if the profiles have been opened
-    PROFILES=$(trackocli proof state profiles)
+    PROFILES=$(trackocli query app profiles)
     for i in "${!NAMES[@]}"; do 
        assertTrue 'profile not created' "[[ $PROFILES == *"${NAMES[$i]}"* ]]"
     done
@@ -129,15 +129,15 @@ testDeletingProfile(){
     assertNull "Error Non-Null Line $LINENO $err" "$err"
     
     #test if profile is active
-    ACTIVE=$(trackocli proof state profile ${NAMES[3]} | jq .Active)
+    ACTIVE=$(trackocli query app profile ${NAMES[3]} | jq .Active)
     assertEquals 'deleted profile still active' "$ACTIVE" "false"
 
     #verify it doesn't exist in the active list
-    PROFILES=$(trackocli proof state profiles)
+    PROFILES=$(trackocli query app profiles)
     assertFalse 'profile should be removed from active' "[[ "${PROFILES}" == *"${NAMES[3]}"* ]]"
     
     #verify it does exist in the inactive list
-    PROFILES=$(trackocli proof state profiles --inactive)
+    PROFILES=$(trackocli query app profiles --inactive)
     assertTrue 'profile should exist on inactive' "[[ "${PROFILES}" == *"${NAMES[3]}"* ]]"
 }
 
@@ -145,14 +145,14 @@ testEditingProfile(){
     err=$((tx "profile-edit --cur=USD" ${ACCOUNTS[0]} ${SEQ[0]}) 2>&1 > /dev/null)
     seqUp 0
     assertNull "Error Non-Null Line $LINENO $err" "$err"
-    CUR=$(trackocli proof state profile ${NAMES[0]} | jq .AcceptedCur | tr -d '"')
+    CUR=$(trackocli query app profile ${NAMES[0]} | jq .AcceptedCur | tr -d '"')
     assertEquals 'active profile should be editable' "$CUR" "USD"
 
     #make sure that we're prevented from editing an inactive profile
     err=$((tx "profile-edit --cur=USD" ${ACCOUNTS[3]} ${SEQ[3]}) 2>&1 > /dev/null)
     #TODO fix this check, need lightcli to output errors to the stderr
     #assertNotNull "Non-Null Error expected at Line $LINENO" "$err"
-    CUR=$(trackocli proof state profile ${NAMES[3]} | jq .AcceptedCur | tr -d '"')
+    CUR=$(trackocli query app profile ${NAMES[3]} | jq .AcceptedCur | tr -d '"')
     assertNotEquals 'inactive profile should not be editable' "$CUR" "USD"
 }
 
@@ -163,15 +163,15 @@ testContractInvoice(){
     seqUp 1 
     assertNull "Error Non-Null Line $LINENO $err" "$err"
 
-    ID=$(trackocli proof state invoices | jq .[0][1].ID | tr -d '"')
-    CUR1=$(trackocli proof state invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
+    ID=$(trackocli query app invoices | jq .[0][1].ID | tr -d '"')
+    CUR1=$(trackocli query app invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
     
     #Edit the invoice
     err=$((tx "contract-edit --invoice-amount=1000.99CAD --id=0x$ID --date=2017-01-01 --to=AllInBits --notes=thanks!" \
         ${ACCOUNTS[1]} ${SEQ[1]}) 2>&1 > /dev/null)
     seqUp 1 
     assertNull "Error Non-Null Line $LINENO $err" "$err"
-    CUR2=$(trackocli proof state invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
+    CUR2=$(trackocli query app invoice 0x$ID | jq .data.Ctx.Invoiced.CurTime.Cur)
     
     assertNotEquals "contract invoice currency should have been edited $CUR1 $CUR2" "$CUR1" "$CUR2"
 
@@ -180,18 +180,18 @@ testContractInvoice(){
         ${ACCOUNTS[0]} ${SEQ[0]}) 2>&1 > /dev/null)
     seqUp 0 
     assertNull "Error Non-Null Line $LINENO $err" "$err"
-    open=$(trackocli proof state invoice 0x$ID | jq .data.Ctx.Open)
+    open=$(trackocli query app invoice 0x$ID | jq .data.Ctx.Open)
     assertEquals "Invoice should be open as not fully paid" "$open" "true"
     
     err=$((tx "payment --receiver-name=${NAMES[1]} --ids=0x$ID --paid=0.2454003323983133BTC --date=2017-01-01 --tx-id=FOOBTC-TX-02" \
         ${ACCOUNTS[0]} ${SEQ[0]}) 2>&1 > /dev/null)
     seqUp 0 
     assertNull "Error Non-Null Line $LINENO $err" "$err"
-    open=$(trackocli proof state invoice 0x$ID | jq .data.Ctx.Open)
+    open=$(trackocli query app invoice 0x$ID | jq .data.Ctx.Open)
     assertNotEquals "invoice should nolonger be open" "$open" "true"
     
     #query the payments
-    len=$(trackocli proof state payments | jq '. | length')
+    len=$(trackocli query app payments | jq '. | length')
     assertEquals "Payments should have two entries" 2 $len
 }
 
@@ -211,8 +211,8 @@ testContractExpense(){
     assertNull "Error Non-Null Line $LINENO $err" "$err"
    
     #Download receipt from query
-    ID2=$(trackocli proof state invoices | jq .[1][1].ID | tr -d '"')
-    err=$(trackocli proof state invoice 0x$ID2 --download-expense=$DIR 2>&1 > /dev/null)
+    ID2=$(trackocli query app invoices | jq .[1][1].ID | tr -d '"')
+    err=$(trackocli query app invoice 0x$ID2 --download-expense=$DIR 2>&1 > /dev/null)
     assertNull "Error Non-Null Line $LINENO $err" "$err"
     
     assertTrue "Receipt didn't download from query" "[ -f $DIR/invoicerDoc.png ]"
@@ -229,11 +229,11 @@ testSums(){
     done
     
     #count the number of new invoices
-    len=$(trackocli proof state invoices --date-range=2017-01-02: | jq '. | length')
+    len=$(trackocli query app invoices --date-range=2017-01-02: | jq '. | length')
     assertEquals "Invoices should have four entries" 4 $len
     
     #get the sum of the invoice amount due
-    SUM1=$(trackocli proof state invoices --sum --date-range=2017-01-02: | jq .SumDue.Amount | tr -d '"')
+    SUM1=$(trackocli query app invoices --sum --date-range=2017-01-02: | jq .SumDue.Amount | tr -d '"')
     
     #pay a bit of the invoices off
     err=$((tx "payment --receiver-name=${NAMES[1]} --date-range=2017-01-02: --paid=2BTC --date=2017-03-15 --tx-id=FOOBTC-TX-03" \
@@ -242,11 +242,11 @@ testSums(){
     assertNull "Error Non-Null Line $LINENO $err" "$err"
    
     #check that some of the invoices are closed from that last payment
-    len=$(trackocli proof state invoices --date-range=2017-01-02: --type open | jq '. | length')
+    len=$(trackocli query app invoices --date-range=2017-01-02: --type open | jq '. | length')
     assertEquals "Invoices should have two entries" 2 $len
     
     #check the remainded that the new sum is 2 than old sum
-    SUM2=$(trackocli proof state invoices --sum --date-range=2017-01-02: | jq .SumDue.Amount | tr -d '"')
+    SUM2=$(trackocli query app invoices --sum --date-range=2017-01-02: | jq .SumDue.Amount | tr -d '"')
     SUM2Plus2=$(echo "$SUM2 + 2" | bc)
     assertTrue "Sums are not consistent" "[ "$SUM1" == "$SUM2Plus2" ]"
 }

@@ -2,46 +2,19 @@
 package adapters
 
 import (
-	"encoding/hex"
-
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	crypto "github.com/tendermint/go-crypto"
-	wire "github.com/tendermint/go-wire"
 	lightclient "github.com/tendermint/light-client"
 	"github.com/tendermint/light-client/commands"
 	"github.com/tendermint/light-client/commands/txs"
-	cmn "github.com/tendermint/tmlibs/common"
 
 	bcmd "github.com/tendermint/basecoin/cmd/basecli/commands"
 
 	trcmd "github.com/tendermint/trackomatron/commands"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
-	trtypes "github.com/tendermint/trackomatron/types"
 )
-
-type InvoicePresenter struct{}
-
-func (_ InvoicePresenter) MakeKey(str string) ([]byte, error) {
-	if !cmn.IsHex(str) {
-		return nil, trcmd.ErrBadHexID
-	}
-	id, err := hex.DecodeString(cmn.StripHex(str))
-	if err != nil {
-		return nil, err
-	}
-	key := invoicer.InvoiceKey(id)
-	return key, nil
-}
-
-func (_ InvoicePresenter) ParseData(raw []byte) (interface{}, error) {
-	var invoice trtypes.Invoice
-	err := wire.ReadBinaryBytes(raw, &invoice)
-	return invoice, err
-}
-
-/**** build out the tx ****/
 
 var (
 	_ txs.ReaderMaker      = InvoiceTxMaker{}
