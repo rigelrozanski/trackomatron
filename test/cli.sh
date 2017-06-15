@@ -43,29 +43,55 @@ oneTimeTearDown() {
     echo "cleaning up bash test"
 }
 
+#newKey(){
+#    if [ -z "$1" ]; then 
+#        return 
+#    fi 
+#    expect <<- DONE
+#      spawn trackocli keys new $1
+#      expect "Enter a passphrase:" 
+#      send -- "passweirdo\r"
+#      expect "Repeat the passphrase:"
+#      send -- "passweirdo\r"
+#      expect eof
+#      catch wait result
+#DONE
+#}
+
+#initLightCli(){
+#    expect <<- DONE
+#      expect "Is this valid (y/n)?" 
+#      send -- "y\r"
+#      expect eof
+#      catch wait result
+#DONE
+#}
+
+#txAmount(){
+#    if [ -z "$4" ]; then 
+#        return 
+#    fi 
+#    expect <<- DONE
+#      spawn trackocli tx $1 --name $2 \
+#          --amount $4mycoin --fee 0mycoin --sequence $3
+#      expect "Please enter passphrase for $2:" 
+#      send -- "passweirdo\r"
+#      expect eof
+#      catch wait result
+#DONE
+#}
+
 newKey(){
-    if [ -z "$1" ]; then 
-        return 
-    fi 
-    expect <<- DONE
-      spawn trackocli keys new $1
-      expect "Enter a passphrase:" 
-      send -- "passweirdo\r"
-      expect "Repeat the passphrase:"
-      send -- "passweirdo\r"
-      expect eof
-      catch wait result
-DONE
+  assertNotNull "keyname required" "$1"
+  KEYPASS=${2:-qwertyuiop}
+  (echo $KEYPASS; echo $KEYPASS) | trackocli keys new $1 >/dev/null 2>&1
+  assertTrue "created $1" $?
 }
 
 initLightCli(){
-    expect <<- DONE
-      spawn trackocli init --chainid=test_chain_id --node=tcp://localhost:46657
-      expect "Is this valid (y/n)?" 
-      send -- "y\r"
-      expect eof
-      catch wait result
-DONE
+  SEND=${2:-y}
+  (echo $SEND) | trackocli init --chainid=test_chain_id \
+      --node=tcp://localhost:46657 >/dev/null 2>&1
 }
 
 
@@ -80,14 +106,9 @@ txAmount(){
     if [ -z "$4" ]; then 
         return 
     fi 
-    expect <<- DONE
-      spawn trackocli tx $1 --name $2 \
-          --amount $4mycoin --fee 0mycoin --sequence $3
-      expect "Please enter passphrase for $2:" 
-      send -- "passweirdo\r"
-      expect eof
-      catch wait result
-DONE
+    KEYPASS=${2:-qwertyuiop}
+    (echo $KEYPASS) | trackocli tx $1 --name $2 \
+        --amount $4mycoin --fee 0mycoin --sequence $3 >/dev/null 2>&1
 }
 
 SEQ=(1 1 1 1)

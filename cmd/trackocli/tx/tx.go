@@ -14,10 +14,6 @@ import (
 //nolint
 var (
 	//Commands
-	InvoicerCmd = &cobra.Command{
-		Use:   invoicer.Name,
-		Short: "Commands relating to invoicer system",
-	}
 
 	ProfileOpenCmd = &cobra.Command{
 		Use:   "profile-open [name]",
@@ -35,30 +31,6 @@ var (
 		Use:   "profile-deactivate",
 		Short: "Deactivate and existing profile",
 		RunE:  profileDeactivateCmd,
-	}
-
-	ContractOpenCmd = &cobra.Command{
-		Use:   "contract-open [amount]",
-		Short: "Send a contract invoice of amount <value><currency>",
-		RunE:  contractOpenCmd,
-	}
-
-	ContractEditCmd = &cobra.Command{
-		Use:   "contract-edit [amount]",
-		Short: "Edit an open contract invoice to amount <value><currency>",
-		RunE:  contractEditCmd,
-	}
-
-	ExpenseOpenCmd = &cobra.Command{
-		Use:   "expense-open [amount]",
-		Short: "Send an expense invoice of amount <value><currency>",
-		RunE:  expenseOpenCmd,
-	}
-
-	ExpenseEditCmd = &cobra.Command{
-		Use:   "expense-edit [amount]",
-		Short: "Edit an open expense invoice to amount <value><currency>",
-		RunE:  expenseEditCmd,
 	}
 
 	PaymentCmd = &cobra.Command{
