@@ -33,6 +33,7 @@ var (
 func init() {
 	FSQueryProfiles.Bool(FlagInactive, false, "list inactive profiles")
 	QueryProfilesCmd.Flags().AddFlagSet(FSQueryProfiles)
+
 	appCmd.AddCommand(trcmd.QueryProfileCmd)
 	appCmd.AddCommand(trcmd.QueryProfilesCmd)
 }

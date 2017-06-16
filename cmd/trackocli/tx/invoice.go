@@ -4,19 +4,18 @@ package adapters
 import (
 	"encoding/hex"
 	"errors"
+	"strings"
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	crypto "github.com/tendermint/go-crypto"
 	lightclient "github.com/tendermint/light-client"
-	"github.com/tendermint/light-client/commands"
 
 	bcmd "github.com/tendermint/basecoin/cmd/basecli/commands"
 
+	"github.com/tendermint/light-client/commands/txs"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
-	"github.com/tendermint/trackomatron/trackocli/common"
 	"github.com/tendermint/trackomatron/types"
 )
 
@@ -50,92 +49,90 @@ var (
 
 func init() {
 
-	ProfileOpenCmd.Flags().AddFlagSet(trcmd.FSTxProfile)
-	ProfileEditCmd.Flags().AddFlagSet(trcmd.FSTxProfile)
+	FSTxInvoice = flag.NewFlagSet("", flag.ContinueOnError)
+	FSTxExpense = flag.NewFlagSet("", flag.ContinueOnError)
+	FSTxInvoiceEdit = flag.NewFlagSet("", flag.ContinueOnError)
+	//only need to add common flags to this flagset as it's included in all invoice commands
+	bcmd.AddAppTxFlags(FSTxInvoice)
 
-	ContractOpenCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
-	ContractEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
-	ContractEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoiceEdit)
+	FSTxInvoice.String(FlagTo, "allinbits", "Name of the invoice receiver")
+	FSTxInvoice.String(FlagDepositInfo, "", "Deposit information for invoice payment (default: profile)")
+	FSTxInvoice.String(FlagNotes, "", "Notes regarding the expense")
+	FSTxInvoice.String(FlagCur, "", "Currency which invoice should be paid in")
+	FSTxInvoice.String(FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
+	FSTxInvoice.String(FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
+	FSTxExpense.String(FlagReceipt, "", "Directory to receipt document file")
+	FSTxExpense.String(FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
+	FSTxInvoiceEdit.String(FlagID, "", "ID (hex) of the invoice to modify")
 
-	ExpenseOpenCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
-	ExpenseOpenCmd.Flags().AddFlagSet(trcmd.FSTxExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoice)
-	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSTxExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(trcmd.FSTxInvoiceEdit)
+	ContractOpenCmd.Flags().AddFlagSet(FSTxInvoice)
+	ContractEditCmd.Flags().AddFlagSet(FSTxInvoice)
+	ContractEditCmd.Flags().AddFlagSet(FSTxInvoiceEdit)
+	ExpenseOpenCmd.Flags().AddFlagSet(FSTxInvoice)
+	ExpenseOpenCmd.Flags().AddFlagSet(FSTxExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(FSTxInvoice)
+	ExpenseEditCmd.Flags().AddFlagSet(FSTxExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(FSTxInvoiceEdit)
 
-	PaymentCmd.Flags().AddFlagSet(trcmd.FSTxPayment)
-
-	//register commands
-	InvoicerCmd.AddCommand(
-		ProfileOpenCmd,
-		ProfileEditCmd,
-		ProfileDeactivateCmd,
+	txs.RootCmd.AddCommand(
 		ContractOpenCmd,
 		ContractEditCmd,
 		ExpenseOpenCmd,
 		ExpenseEditCmd,
-		PaymentCmd,
 	)
-	bcmd.RegisterTxSubcommand(InvoicerCmd)
 }
 
-type InvoiceTxMaker struct {
-	TBTx byte
+func contractOpenCmd(cmd *cobra.Command, args []string, TBTx byte) error {
+	return invoiceCmd(cmd, args, invoicer.TBTxContractOpen)
+}
+func contractEditCmd(cmd *cobra.Command, args []string, TBTx byte) error {
+	return invoiceCmd(cmd, args, invoicer.TBTxContractEdit)
+}
+func expenseOpenCmd(cmd *cobra.Command, args []string, TBTx byte) error {
+	return invoiceCmd(cmd, args, invoicer.TBTxExpenseOpen)
+}
+func expenseEditCmd(cmd *cobra.Command, args []string, TBTx byte) error {
+	return invoiceCmd(cmd, args, invoicer.TBTxExpenseEdit)
 }
 
-func (m InvoiceTxMaker) MakeReader() (lightclient.TxReader, error) {
-	chainID := viper.GetString(commands.ChainFlag)
-	return InvoiceTxReader{
-		App:  bcmd.AppTxReader{ChainID: chainID},
-		TBTx: m.TBTx,
-	}, nil
-}
+func invoiceCmd(cmd *cobra.Command, args []string, TBTx byte) error {
+	// Note: we don't support loading apptx from json currently, so skip that
 
-// define flags
-
-type InvoiceFlags struct {
-	bcmd.AppFlags `mapstructure:",squash"`
-}
-
-func (m InvoiceTxMaker) Flags() (*flag.FlagSet, interface{}) {
-	fs, app := bcmd.AppFlagSet()
-	fs.AddFlagSet(common.FSTxInvoice)
-	fs.String(common.FlagInvoiceAmount, "", "Name of the new invoice to open")
-
-	//add additional flags, as necessary
-	switch m.TBTx {
-	case invoicer.TBTxExpenseOpen:
-		fs.AddFlagSet(common.FSTxExpense)
-	case invoicer.TBTxExpenseEdit:
-		fs.AddFlagSet(common.FSTxExpense)
-		fs.AddFlagSet(common.FSTxInvoiceEdit)
-	case invoicer.TBTxContractEdit:
-		fs.AddFlagSet(common.FSTxInvoiceEdit)
-	}
-
-	return fs, &InvoiceFlags{AppFlags: app}
-}
-
-// parse flags
-
-type InvoiceTxReader struct {
-	App  bcmd.AppTxReader
-	TBTx byte
-}
-
-func (t InvoiceTxReader) ReadTxJSON(data []byte, pk crypto.PubKey) (interface{}, error) {
-	return t.App.ReadTxJSON(data, pk)
-}
-
-func (t InvoiceTxReader) ReadTxFlags(flags interface{}, pk crypto.PubKey) (interface{}, error) {
-	data := flags.(*InvoiceFlags)
-	amount := viper.GetString(common.FlagInvoiceAmount)
-	senderAddr := pk.Address()
-	txBytes, err := InvoiceTx(t.TBTx, senderAddr, amount)
+	// Read the standard app-tx flags
+	gas, fee, txInput, err := bcmd.ReadAppTxFlags()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return t.App.ReadTxFlags(&data.AppFlags, invoicer.Name, txBytes, pk)
+
+	// Retrieve the app-specific flags
+	if len(args) != 1 {
+		return trcmd.ErrCmdReqArg("amount<amt><cur>")
+	}
+	amountStr := args[0]
+
+	data, err := InvoiceTx(TBTx, txInput.Address, amountStr)
+	if err != nil {
+		return err
+	}
+
+	//create the name from the command
+	name = strings.Split(cmd.Use, " ")[0]
+
+	// Create AppTx and broadcast
+	tx := &btypes.AppTx{
+		Gas:   gas,
+		Fee:   fee,
+		Name:  name,
+		Input: txInput,
+		Data:  data,
+	}
+	res, err := bcmd.BroadcastAppTx(tx)
+	if err != nil {
+		return err
+	}
+
+	// Output result
+	return txcmd.OutputTx(res)
 }
 
 // InvoiceTx Generates the Tendermint tx

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	cmn "github.com/tendermint/tmlibs/common"
@@ -18,12 +17,7 @@ import (
 
 //nolint
 var (
-	//Exposed flagsets
-	FSTxProfile     = flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxInvoice     = flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxExpense     = flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxPayment     = flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxInvoiceEdit = flag.NewFlagSet("", flag.ContinueOnError)
+//Exposed flagsets
 )
 
 func init() {
@@ -34,16 +28,6 @@ func init() {
 	FSTxProfile.String(FlagDepositInfo, "", "Default deposit information to be provided")
 	FSTxProfile.Int(FlagDueDurationDays, 14, "Default number of days until invoice is due from invoice submission")
 
-	FSTxInvoice.String(FlagTo, "allinbits", "Name of the invoice receiver")
-	FSTxInvoice.String(FlagDepositInfo, "", "Deposit information for invoice payment (default: profile)")
-	FSTxInvoice.String(FlagNotes, "", "Notes regarding the expense")
-	FSTxInvoice.String(FlagCur, "", "Currency which invoice should be paid in")
-	FSTxInvoice.String(FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
-	FSTxInvoice.String(FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
-
-	FSTxExpense.String(FlagReceipt, "", "Directory to receipt document file")
-	FSTxExpense.String(FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
-
 	FSTxPayment.String(FlagIDs, "", "IDs to close during this transaction <id1>,<id2>,<id3>... ")
 	FSTxPayment.String(FlagTransactionID, "", "Completed transaction ID")
 	FSTxPayment.String(FlagPaid, "", "Payment amount in the format <decimal><currency> eg. 10.23usd")
@@ -51,7 +35,6 @@ func init() {
 	FSTxPayment.String(FlagDateRange, "",
 		"Autoselect IDs within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
 
-	FSTxInvoiceEdit.String(FlagID, "", "ID (hex) of the invoice to modify")
 }
 
 // ProfileTx Generates the tendermint TX used by the light and heavy client
