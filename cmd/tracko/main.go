@@ -7,15 +7,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tendermint/basecoin/cmd/commands"
-	"github.com/tendermint/basecoin/types"
 	"github.com/tendermint/tmlibs/cli"
-	"github.com/tendermint/trackomatron/plugins/invoicer"
 )
 
 func init() {
-
-	//Register invoicer with basecoin
-	commands.RegisterStartPlugin(invoicer.Name, func() types.Plugin { return invoicer.New() })
 
 	//Change the GenesisJSON
 	commands.GenesisJSON = `{
@@ -58,12 +53,7 @@ func main() {
 	RootCmd.AddCommand(
 		commands.InitCmd,
 		commands.StartCmd,
-		commands.TxCmd,
-		commands.QueryCmd,
-		commands.KeyCmd,
-		commands.VerifyCmd,
-		commands.BlockCmd,
-		commands.AccountCmd,
+		commands.RelayCmd,
 		commands.UnsafeResetAllCmd,
 		commands.QuickVersionCmd("0.1.0"),
 	)

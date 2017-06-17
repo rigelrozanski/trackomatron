@@ -1,17 +1,19 @@
 package query
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	wire "github.com/tendermint/go-wire"
-	trcmd "github.com/tendermint/trackomatron/commands"
+
+	trcmn "github.com/tendermint/trackomatron/cmd/trackocli/common"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 )
 
+//nolint
 var (
 	QueryProfileCmd = &cobra.Command{
 		Use:          "profile [name]",
@@ -26,33 +28,28 @@ var (
 		SilenceUsage: true,
 		RunE:         queryProfilesCmd,
 	}
-
-	FSQueryProfiles = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
-	FSQueryProfiles.Bool(FlagInactive, false, "list inactive profiles")
+	FSQueryProfiles := flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryProfiles.Bool(trcmn.FlagInactive, false, "List inactive profiles")
 	QueryProfilesCmd.Flags().AddFlagSet(FSQueryProfiles)
-
-	appCmd.AddCommand(trcmd.QueryProfileCmd)
-	appCmd.AddCommand(trcmd.QueryProfilesCmd)
 }
 
 // DoQueryProfileCmd is the workhorse of the heavy and light cli query profile commands
 func queryProfileCmd(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return ErrCmdReqArg("name")
+		return trcmn.ErrCmdReqArg("name")
 	}
 
 	name := args[0]
-
 	if len(name) == 0 {
-		return profile, trcmd.ErrBadQuery("name")
+		return trcmn.ErrBadQuery("name")
 	}
 	key := invoicer.ProfileKey(name)
 	proof, err := getProof(key)
 	if err != nil {
-		return
+		return err
 	}
 	profile, err := invoicer.GetProfileFromWire(proof.Data())
 
@@ -72,7 +69,7 @@ func queryProfileCmd(cmd *cobra.Command, args []string) error {
 func queryProfilesCmd(cmd *cobra.Command, args []string) error {
 
 	var key []byte
-	if viper.GetBool(FlagInactive) {
+	if viper.GetBool(trcmn.FlagInactive) {
 		key = invoicer.ListProfileInactiveKey()
 	} else {
 		key = invoicer.ListProfileActiveKey()
@@ -80,7 +77,7 @@ func queryProfilesCmd(cmd *cobra.Command, args []string) error {
 
 	proof, err := getProof(key)
 	if err != nil {
-		return
+		return err
 	}
 	listProfiles, err := invoicer.GetListStringFromWire(proof.Data())
 	if err != nil {

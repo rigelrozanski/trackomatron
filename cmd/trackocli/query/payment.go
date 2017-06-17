@@ -1,17 +1,21 @@
 package query
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
 	wire "github.com/tendermint/go-wire"
+
+	trcmn "github.com/tendermint/trackomatron/cmd/trackocli/common"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 	"github.com/tendermint/trackomatron/types"
 )
 
+//nolint
 var (
 	QueryPaymentCmd = &cobra.Command{
 		Use:          "payment [id]",
@@ -26,16 +30,16 @@ var (
 		SilenceUsage: true,
 		RunE:         queryPaymentsCmd,
 	}
-	FSQueryPayments = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
 
-	FSQueryPayments.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
-	FSQueryPayments.String(FlagDateRange, "",
+	FSQueryPayments := flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryPayments.Int(trcmn.FlagNum, 0, "Number of results to display, use 0 for no limit")
+	FSQueryPayments.String(trcmn.FlagDateRange, "",
 		"Query within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
-	FSQueryPayments.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
-	FSQueryPayments.String(FlagTo, "", "Only query for payments to these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryPayments.String(trcmn.FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryPayments.String(trcmn.FlagTo, "", "Only query for payments to these addresses in the format <ADDR1>,<ADDR2>, etc.")
 
 	QueryPaymentsCmd.Flags().AddFlagSet(FSQueryPayments)
 }
@@ -53,7 +57,7 @@ func queryPayment(transactionID string) (payment types.Payment, err error) {
 func queryPaymentCmd(cmd *cobra.Command, args []string) error {
 
 	if len(args) != 1 {
-		return ErrCmdReqArg("transactionID")
+		return trcmn.ErrCmdReqArg("transactionID")
 	}
 	transactionID := args[0]
 
@@ -61,7 +65,7 @@ func queryPaymentCmd(cmd *cobra.Command, args []string) error {
 	key := invoicer.PaymentKey(transactionID)
 	proof, err := getProof(key)
 	if err != nil {
-		return
+		return err
 	}
 	payment, err := invoicer.GetPaymentFromWire(proof.Data())
 	if err != nil {
@@ -78,13 +82,12 @@ func queryPaymentCmd(cmd *cobra.Command, args []string) error {
 }
 
 // DoQueryPaymentsCmd is the workhorse of the heavy and light cli query profiles commands
-func queryPaymentsCmd(cmd *cobra.Command, args []string,
-	queryListString func(key []byte) ([]string, error),
-	queryPayment func(transactionID string) (types.Payment, error)) error {
+func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
 
+	key := invoicer.ListPaymentKey()
 	proof, err := getProof(key)
 	if err != nil {
-		return
+		return err
 	}
 	listPayments, err := invoicer.GetListStringFromWire(proof.Data())
 	if err != nil {
@@ -112,7 +115,7 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string,
 		key := invoicer.PaymentKey(transactionID)
 		proof, err := getProof(key)
 		if err != nil {
-			return
+			return err
 		}
 		payment, err := invoicer.GetPaymentFromWire(proof.Data())
 		if err != nil {
@@ -148,7 +151,7 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string,
 		payments = append(payments, payment)
 
 		//Limit the number of invoices retrieved
-		maxInv := viper.GetInt(FlagNum)
+		maxInv := viper.GetInt(trcmn.FlagNum)
 		if len(payments) > maxInv && maxInv > 0 {
 			break
 		}

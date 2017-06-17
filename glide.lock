@@ -1,5 +1,5 @@
-hash: 23074d244d6f47c105ea888d40899f0834dd078060e3be092f63a1b6dc2d3011
-updated: 2017-06-14T01:41:24.812266431-04:00
+hash: a24296e8bd8c386eac9873a2852cbaccd101286c45ee348fc56585579ba1bcc7
+updated: 2017-06-16T19:13:39.919092729-04:00
 imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
@@ -68,7 +68,7 @@ imports:
 - name: github.com/pelletier/go-buffruneio
   version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/pelletier/go-toml
-  version: fe7536c3dee2596cdd23ee9976a17c22bdaae286
+  version: 13d49d4606eb801b8f01ae542b4afc4c6ee3d84a
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/sethgrid/pester
@@ -112,7 +112,7 @@ imports:
   - server
   - types
 - name: github.com/tendermint/basecoin
-  version: f9866c08c86f97b9eaaa5af10bfc1d2d6d30a5bc
+  version: a20b640f05e9197bde4d310a660bd349e2cc8df1
   subpackages:
   - app
   - cmd/basecli/commands
@@ -141,7 +141,7 @@ imports:
   - data
   - data/base58
 - name: github.com/tendermint/light-client
-  version: d993d8a9ba6cb51f05faf6e527016288e38c2853
+  version: 4ad913f2728307ec13a3b602b040c29b6a2117b8
   subpackages:
   - certifiers
   - certifiers/client
@@ -153,17 +153,16 @@ imports:
   - commands/txs
   - proofs
 - name: github.com/tendermint/merkleeyes
-  version: b653442978ee84c7df583417e86e82dd9fe3d674
+  version: feb2c3fadac8221f96fbfce65a63af034327f972
   subpackages:
   - app
   - client
   - iavl
 - name: github.com/tendermint/tendermint
-  version: 11b5d11e9eec170e1d3dce165f0270d5c0759d69
+  version: 4f0f50c62d41d39ad64e07ad642f705cc13c8229
   subpackages:
   - blockchain
   - cmd/tendermint/commands
-  - cmd/tendermint/commands/flags
   - config
   - consensus
   - mempool
@@ -210,7 +209,7 @@ imports:
   - ripemd160
   - salsa20/salsa
 - name: golang.org/x/net
-  version: dfe83d419c9403b40b19d08cdba2afec27b002f7
+  version: 973f3f3bbd50e92b13faa6c53ec16f49b45e851c
   subpackages:
   - context
   - http2
@@ -220,11 +219,11 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/sys
-  version: 0b25a408a50076fbbcae6b7ac0ea5fbb0b085e79
+  version: fb4cac33e3196ff7f507ab9b2d2a44b0142f5b5a
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 3491b61b9edc56653ad4333e605e2908e46a036b
+  version: 9e2f80a6ba7ed4ba13e0cd4b1f094bf916875735
   subpackages:
   - secure/bidirule
   - transform
@@ -235,7 +234,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 1ab4adf22dbaf4eb6cfd01eaa711612ffcf87890
+  version: c5c761dbca07f4d0efafd3f430a40dcdf1c1163f
   subpackages:
   - codes
   - credentials

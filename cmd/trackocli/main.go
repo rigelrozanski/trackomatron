@@ -14,9 +14,11 @@ import (
 	"github.com/tendermint/tmlibs/cli"
 
 	bcmd "github.com/tendermint/basecoin/cmd/basecli/commands"
-	adapters "github.com/tendermint/trackomatron/cmd/trackocli/adapters"
-	trcmd "github.com/tendermint/trackomatron/commands"
-	invplug "github.com/tendermint/trackomatron/plugins/invoicer"
+	bcmd2 "github.com/tendermint/basecoin/cmd/commands"
+	"github.com/tendermint/basecoin/types"
+	trquery "github.com/tendermint/trackomatron/cmd/trackocli/query"
+	trtx "github.com/tendermint/trackomatron/cmd/trackocli/tx"
+	"github.com/tendermint/trackomatron/plugins/invoicer"
 )
 
 // TrackoCli represents the base command when called without any subcommands
@@ -26,26 +28,46 @@ var TrackoCli = &cobra.Command{
 }
 
 func main() {
+	//Add the basic flags
 	commands.AddBasicFlags(TrackoCli)
 
-	//initialize proofs and txs default basecoin behaviour
+	//Register invoicer with basecoin
+	bcmd2.RegisterStartPlugin(invoicer.Name, func() types.Plugin { return invoicer.New() })
+
+	// Prepare queries
+	proofs.RootCmd.AddCommand(
+		//basecoin commands
+		bcmd.AccountQueryCmd,
+		//custom commands
+		trquery.QueryInvoiceCmd,
+		trquery.QueryInvoicesCmd,
+		trquery.QueryProfileCmd,
+		trquery.QueryProfilesCmd,
+		trquery.QueryPaymentCmd,
+		trquery.QueryPaymentsCmd,
+	)
+
+	//Initialize proofs and txs default basecoin behaviour
 	//proofs.StateGetPresenters.Register("account", bcmd.AccountPresenter{})
 	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
-	txs.Register("send", bcmd.SendTxMaker{})
-
-	txs.Register(trcmd.TxNameProfileOpen, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileOpen})
-	txs.Register(trcmd.TxNameProfileEdit, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileEdit})
-	txs.Register(trcmd.TxNameProfileDeactivate, adapters.ProfileTxMaker{TBTx: invplug.TBTxProfileDeactivate})
-	txs.Register(trcmd.TxNameContractOpen, adapters.InvoiceTxMaker{TBTx: invplug.TBTxContractOpen})
-	txs.Register(trcmd.TxNameContractEdit, adapters.InvoiceTxMaker{TBTx: invplug.TBTxContractEdit})
-	txs.Register(trcmd.TxNameExpenseOpen, adapters.InvoiceTxMaker{TBTx: invplug.TBTxExpenseOpen})
-	txs.Register(trcmd.TxNameExpenseEdit, adapters.InvoiceTxMaker{TBTx: invplug.TBTxExpenseEdit})
-	txs.Register(trcmd.TxNamePayment, adapters.PaymentTxMaker{})
+	txs.RootCmd.AddCommand(
+		//basecoin commands
+		bcmd.SendTxCmd,
+		//custom commands
+		trtx.ProfileOpenCmd,
+		trtx.ProfileEditCmd,
+		trtx.ContractOpenCmd,
+		trtx.ContractEditCmd,
+		trtx.ExpenseOpenCmd,
+		trtx.ExpenseEditCmd,
+		trtx.PaymentCmd,
+	)
 
 	// set up the various commands to use
 	TrackoCli.AddCommand(
-		keycmd.RootCmd,
 		commands.InitCmd,
+		commands.ResetCmd,
+		keycmd.RootCmd,
 		seeds.RootCmd,
 		proofs.RootCmd,
 		txs.RootCmd,

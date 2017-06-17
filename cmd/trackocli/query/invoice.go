@@ -16,6 +16,7 @@ import (
 	"github.com/tendermint/go-wire"
 	cmn "github.com/tendermint/tmlibs/common"
 
+	trcmn "github.com/tendermint/trackomatron/cmd/trackocli/common"
 	"github.com/tendermint/trackomatron/common"
 	"github.com/tendermint/trackomatron/plugins/invoicer"
 	"github.com/tendermint/trackomatron/types"
@@ -36,23 +37,22 @@ var (
 		SilenceUsage: true,
 		RunE:         queryInvoicesCmd,
 	}
-
-	FSQueryDownload = flag.NewFlagSet("", flag.ContinueOnError)
-	FSQueryInvoices = flag.NewFlagSet("", flag.ContinueOnError)
 )
 
 func init() {
 	//register flags
-	FSQueryDownload.String(FlagDownloadExp, "", "download expenses pdfs to the relative path specified")
+	FSQueryDownload := flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryInvoices := flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryDownload.String(trcmn.FlagDownloadExp, "", "Download expenses pdfs to the relative path specified")
 
-	FSQueryInvoices.Int(FlagNum, 0, "number of results to display, use 0 for no limit")
-	FSQueryInvoices.String(FlagType, "",
-		"limit the scope by using any of the following modifiers with commas: invoice,expense,open,closed")
-	FSQueryInvoices.String(FlagDateRange, "",
+	FSQueryInvoices.Int(trcmn.FlagNum, 0, "Number of results to display, use 0 for no limit")
+	FSQueryInvoices.String(trcmn.FlagType, "",
+		"Limit the scope by using any of the following modifiers with commas: invoice,expense,open,closed")
+	FSQueryInvoices.String(trcmn.FlagDateRange, "",
 		"Query within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
-	FSQueryInvoices.String(FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
-	FSQueryInvoices.String(FlagTo, "", "Only query for invoices to these addresses in the format <ADDR1>,<ADDR2>, etc.")
-	FSQueryInvoices.Bool(FlagSum, false, "Sum invoice values by sender")
+	FSQueryInvoices.String(trcmn.FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryInvoices.String(trcmn.FlagTo, "", "Only query for invoices to these addresses in the format <ADDR1>,<ADDR2>, etc.")
+	FSQueryInvoices.Bool(trcmn.FlagSum, false, "Sum invoice values by sender")
 
 	QueryInvoiceCmd.Flags().AddFlagSet(FSQueryDownload)
 	QueryInvoicesCmd.Flags().AddFlagSet(FSQueryDownload)
@@ -63,10 +63,10 @@ func init() {
 func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 
 	if len(args) != 1 {
-		return ErrCmdReqArg("id")
+		return trcmn.ErrCmdReqArg("id")
 	}
 	if !cmn.IsHex(args[0]) {
-		return ErrBadHexID
+		return trcmn.ErrBadHexID
 	}
 	id, err := hex.DecodeString(cmn.StripHex(args[0]))
 	if err != nil {
@@ -76,7 +76,7 @@ func queryInvoiceCmd(cmd *cobra.Command, args []string) error {
 	key := invoicer.InvoiceKey(id)
 	proof, err := getProof(key)
 	if err != nil {
-		return
+		return err
 	}
 
 	invoice, err := invoicer.GetInvoiceFromWire(proof.Data())
@@ -113,7 +113,7 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 	key := invoicer.ListInvoiceKey()
 	proof, err := getProof(key)
 	if err != nil {
-		return
+		return err
 	}
 	listInvoices, err := invoicer.GetListBytesFromWire(proof.Data())
 	if err != nil {
@@ -128,7 +128,7 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 	//init flag variables
 	froms, toes := processFlagFromTo()
 
-	ty := viper.GetString(FlagType)
+	ty := viper.GetString(trcmn.FlagType)
 	contractFilt, expenseFilt, openFilt, closedFilt := true, true, true, true
 
 	if viper.GetBool("debug") {
@@ -176,7 +176,7 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 		key := invoicer.InvoiceKey(id)
 		proof, err := getProof(key)
 		if err != nil {
-			return
+			return err
 		}
 
 		invoice, err := invoicer.GetInvoiceFromWire(proof.Data())
@@ -240,14 +240,14 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 		invoices = append(invoices, invoice)
 
 		//Limit the number of invoices retrieved
-		maxInv := viper.GetInt(FlagNum)
+		maxInv := viper.GetInt(trcmn.FlagNum)
 		if len(invoices) > maxInv && maxInv > 0 {
 			break
 		}
 	}
 
 	//compute the sum if flag is set
-	if viper.GetBool(FlagSum) {
+	if viper.GetBool(trcmn.FlagSum) {
 		var sum *types.AmtCurTime
 		for _, invoice := range invoices {
 			unpaid, err := invoice.GetCtx().Unpaid()
@@ -286,8 +286,8 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 }
 
 func processFlagFromTo() (froms, toes []string) {
-	from := viper.GetString(FlagFrom)
-	to := viper.GetString(FlagTo)
+	from := viper.GetString(trcmn.FlagFrom)
+	to := viper.GetString(trcmn.FlagTo)
 	if len(froms) > 0 {
 		froms = strings.Split(from, ",")
 	}
@@ -298,7 +298,7 @@ func processFlagFromTo() (froms, toes []string) {
 }
 
 func processFlagDateRange() (startDate, endDate *time.Time, err error) {
-	flagDateRange := viper.GetString(FlagDateRange)
+	flagDateRange := viper.GetString(trcmn.FlagDateRange)
 	if len(flagDateRange) > 0 {
 		startDate, endDate, err = common.ParseDateRange(flagDateRange)
 		if err != nil {
@@ -309,7 +309,7 @@ func processFlagDateRange() (startDate, endDate *time.Time, err error) {
 }
 
 func downloadExp(expense *types.Expense) error {
-	savePath := viper.GetString(FlagDownloadExp)
+	savePath := viper.GetString(trcmn.FlagDownloadExp)
 	if len(savePath) > 0 {
 		savePath = path.Join(savePath, expense.DocFileName)
 		err := ioutil.WriteFile(savePath, expense.Document, 0644)
