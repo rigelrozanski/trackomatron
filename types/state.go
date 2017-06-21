@@ -192,13 +192,13 @@ type Payment struct {
 	Sender         string   //Intended sender profile name of the payment
 	Receiver       string   //Intended receiver profile name of the payment
 	PaymentCurTime *AmtCurTime
-	StartDate      *time.Time //Optional start date of payments to query for
-	EndDate        *time.Time //Optional end date of payments to query
+	StartDate      time.Time //Optional start date of payments to query for
+	EndDate        time.Time //Optional end date of payments to query
 }
 
 // NewPayment creates a new payment state
 func NewPayment(InvoiceIDs [][]byte, TransactionID, Sender, Receiver string,
-	PaymentCurTime *AmtCurTime, StartDate, EndDate *time.Time) *Payment {
+	PaymentCurTime *AmtCurTime, StartDate, EndDate time.Time) *Payment {
 
 	return &Payment{
 		TransactionID:  TransactionID,

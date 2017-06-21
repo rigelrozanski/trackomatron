@@ -9,7 +9,7 @@ import:
   subpackages:
   - types
 - package: github.com/tendermint/basecoin
-  version: develop
+  version: rebash
   subpackages:
   - cmd/commands
   - state

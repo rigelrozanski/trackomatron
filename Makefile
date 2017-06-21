@@ -19,4 +19,4 @@ get_vendor_deps:
 	go get github.com/Masterminds/glide
 	glide install
 
-.PHONY: install test test_unit test_lightcli test_heavycli get_vendor_deps 
+.PHONY: install test test_unit test_cli get_vendor_deps 

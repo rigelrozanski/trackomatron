@@ -234,9 +234,8 @@ testSums(){
     assertTrue "Sums are not consistent" "[ "$SUM1" == "$SUM2Plus2" ]"
 }
 
-# load and run these tests with shunit2!
+# load common and run these tests with shunit2!
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #get this files directory
-#BCDIR="$GOPATH/src/github.com/tendermint/basecoin/tests/cli" #get this files directory
-# load common helpers
-#. $BCDIR/../basecoin/tests.common.sh
+BCDIR="$GOPATH/src/github.com/tendermint/basecoin/tests/cli"
+. $BCDIR/common.sh
 . $DIR/shunit2

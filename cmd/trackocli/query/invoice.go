@@ -188,8 +188,8 @@ func queryInvoicesCmd(cmd *cobra.Command, args []string) error {
 
 		//skip record if out of the date range
 		d := ctx.Invoiced.CurTime.Date
-		if (startDate != nil && d.Before(*startDate)) ||
-			(endDate != nil && d.After(*endDate)) {
+		if (!startDate.IsZero() && d.Before(startDate)) ||
+			(!endDate.IsZero() && d.After(endDate)) {
 			continue
 		}
 
@@ -297,7 +297,7 @@ func processFlagFromTo() (froms, toes []string) {
 	return
 }
 
-func processFlagDateRange() (startDate, endDate *time.Time, err error) {
+func processFlagDateRange() (startDate, endDate time.Time, err error) {
 	flagDateRange := viper.GetString(trcmn.FlagDateRange)
 	if len(flagDateRange) > 0 {
 		startDate, endDate, err = common.ParseDateRange(flagDateRange)

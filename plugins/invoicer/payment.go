@@ -73,8 +73,8 @@ func runTxPayment(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 
 			//skip record if out of the date range
 			d := ctx.Invoiced.CurTime.Date
-			if (payment.StartDate != nil && d.Before(*payment.StartDate)) ||
-				(payment.EndDate != nil && d.After(*payment.EndDate)) {
+			if (!payment.StartDate.IsZero() && d.Before(payment.StartDate)) ||
+				(!payment.EndDate.IsZero() && d.After(payment.EndDate)) {
 				continue
 			}
 

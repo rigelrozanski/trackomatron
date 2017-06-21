@@ -35,6 +35,6 @@ type TxPayment struct {
 	IDs           [][]byte
 	Receiver      string
 	Amt           *AmtCurTime
-	StartDate     *time.Time
-	EndDate       *time.Time
+	StartDate     time.Time
+	EndDate       time.Time
 }

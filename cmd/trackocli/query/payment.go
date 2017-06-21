@@ -124,8 +124,8 @@ func queryPaymentsCmd(cmd *cobra.Command, args []string) error {
 
 		//skip record if out of the date range
 		d := payment.PaymentCurTime.CurTime.Date
-		if (startDate != nil && d.Before(*startDate)) ||
-			(endDate != nil && d.After(*endDate)) {
+		if (!startDate.IsZero() && d.Before(startDate)) ||
+			(!endDate.IsZero() && d.After(endDate)) {
 			continue
 		}
 

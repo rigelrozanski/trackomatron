@@ -91,7 +91,7 @@ func paymentTx(senderAddr []byte, receiver string) ([]byte, error) {
 
 	//Get the date range or list of IDs
 	var ids [][]byte
-	var startDate, endDate *time.Time = nil, nil
+	var startDate, endDate time.Time
 	if len(flagDateRange) > 0 {
 		var err error
 		startDate, endDate, err = common.ParseDateRange(flagDateRange)
@@ -112,7 +112,7 @@ func paymentTx(senderAddr []byte, receiver string) ([]byte, error) {
 		}
 	}
 
-	date, err := common.ParseDate(viper.GetString(trcmn.FlagDate))
+	date, err := time.Parse(common.TimeLayout, viper.GetString(trcmn.FlagDate))
 	if err != nil {
 		return nil, err
 	}
