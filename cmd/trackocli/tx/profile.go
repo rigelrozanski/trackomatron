@@ -36,14 +36,20 @@ var (
 )
 
 func init() {
-	FSTxProfile := flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxProfile.String(trcmn.FlagTo, "", "Who you're invoicing")
-	FSTxProfile.String(trcmn.FlagCur, "BTC", "Payment curreny accepted")
-	FSTxProfile.String(trcmn.FlagDepositInfo, "", "Default deposit information to be provided")
-	FSTxProfile.Int(trcmn.FlagDueDurationDays, 14, "Default number of days until invoice is due from invoice submission")
+	fsTxProfile := flag.NewFlagSet("", flag.ContinueOnError)
 
-	ProfileOpenCmd.Flags().AddFlagSet(FSTxProfile)
-	ProfileEditCmd.Flags().AddFlagSet(FSTxProfile)
+	//add the default flags
+	bcmd.AddAppTxFlags(fsTxProfile)
+	bcmd.AddAppTxFlags(ProfileDeactivateCmd.Flags())
+
+	fsTxProfile.String(trcmn.FlagTo, "", "Who you're invoicing")
+	fsTxProfile.String(trcmn.FlagCur, "BTC", "Payment curreny accepted")
+	fsTxProfile.String(trcmn.FlagDepositInfo, "", "Default deposit information to be provided")
+	fsTxProfile.Int(trcmn.FlagDueDurationDays, 14,
+		"Default number of days until invoice is due from invoice submission")
+
+	ProfileOpenCmd.Flags().AddFlagSet(fsTxProfile)
+	ProfileEditCmd.Flags().AddFlagSet(fsTxProfile)
 }
 
 func profileOpenCmd(cmd *cobra.Command, args []string) error {
@@ -75,7 +81,8 @@ func profileCmd(cmd *cobra.Command, args []string, TBTx byte) error {
 		name = args[0]
 	}
 
-	data := profileTx(TBTx, txInput.Address, name)
+	//TODO get the address here from txInput once changed in basecoin
+	data := profileTx(TBTx, txcmd.GetSigner().Address(), name)
 
 	// Create AppTx and broadcast
 	tx := &btypes.AppTx{

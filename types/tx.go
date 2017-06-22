@@ -1,9 +1,5 @@
 package types
 
-import (
-	"time"
-)
-
 // TxProfile is the transaction struct sent through tendermint
 type TxProfile struct {
 	Address         []byte
@@ -35,6 +31,5 @@ type TxPayment struct {
 	IDs           [][]byte
 	Receiver      string
 	Amt           *AmtCurTime
-	StartDate     time.Time
-	EndDate       time.Time
+	DateRange     string
 }

@@ -47,6 +47,8 @@ func deactivateProfile(store btypes.KVStore, active []string, profile *types.Pro
 
 	name := profile.Name
 
+	//return abci.ErrInternalError.AppendLog(name)
+
 	//get the original profile that's saved from the store, set that one to inactive
 	storeProfile, err := getProfile(store, name)
 	if err != nil {
@@ -61,12 +63,12 @@ func deactivateProfile(store btypes.KVStore, active []string, profile *types.Pro
 	store.Set(ListProfileActiveKey(), wire.BinaryBytes(active))
 
 	//Add the profile name to the list of inactive profiles
-	all, err := getListString(store, ListProfileActiveKey())
+	inactive, err := getListString(store, ListProfileInactiveKey())
 	if err != nil {
 		return abciErrGetAllProfiles
 	}
-	all = append(all, name)
-	store.Set(ListProfileInactiveKey(), wire.BinaryBytes(all))
+	inactive = append(inactive, name)
+	store.Set(ListProfileInactiveKey(), wire.BinaryBytes(inactive))
 
 	return abci.OK
 }

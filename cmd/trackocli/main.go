@@ -14,11 +14,8 @@ import (
 	"github.com/tendermint/tmlibs/cli"
 
 	bcmd "github.com/tendermint/basecoin/cmd/basecli/commands"
-	bcmd2 "github.com/tendermint/basecoin/cmd/commands"
-	"github.com/tendermint/basecoin/types"
 	trquery "github.com/tendermint/trackomatron/cmd/trackocli/query"
 	trtx "github.com/tendermint/trackomatron/cmd/trackocli/tx"
-	"github.com/tendermint/trackomatron/plugins/invoicer"
 )
 
 // TrackoCli represents the base command when called without any subcommands
@@ -30,9 +27,6 @@ var TrackoCli = &cobra.Command{
 func main() {
 	//Add the basic flags
 	commands.AddBasicFlags(TrackoCli)
-
-	//Register invoicer with basecoin
-	bcmd2.RegisterStartPlugin(invoicer.Name, func() types.Plugin { return invoicer.New() })
 
 	// Prepare queries
 	proofs.RootCmd.AddCommand(
@@ -56,6 +50,7 @@ func main() {
 		//custom commands
 		trtx.ProfileOpenCmd,
 		trtx.ProfileEditCmd,
+		trtx.ProfileDeactivateCmd,
 		trtx.ContractOpenCmd,
 		trtx.ContractEditCmd,
 		trtx.ExpenseOpenCmd,

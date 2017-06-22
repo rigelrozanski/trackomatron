@@ -47,30 +47,31 @@ var (
 
 func init() {
 
-	FSTxInvoice := flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxExpense := flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxInvoiceEdit := flag.NewFlagSet("", flag.ContinueOnError)
-	//only need to add common flags to this flagset as it's included in all invoice commands
-	bcmd.AddAppTxFlags(FSTxInvoice)
+	fsTxInvoice := flag.NewFlagSet("", flag.ContinueOnError)
+	fsTxExpense := flag.NewFlagSet("", flag.ContinueOnError)
+	fsTxInvoiceEdit := flag.NewFlagSet("", flag.ContinueOnError)
 
-	FSTxInvoice.String(trcmn.FlagTo, "allinbits", "Name of the invoice receiver")
-	FSTxInvoice.String(trcmn.FlagDepositInfo, "", "Deposit information for invoice payment (default: profile)")
-	FSTxInvoice.String(trcmn.FlagNotes, "", "Notes regarding the expense")
-	FSTxInvoice.String(trcmn.FlagCur, "", "Currency which invoice should be paid in")
-	FSTxInvoice.String(trcmn.FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
-	FSTxInvoice.String(trcmn.FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
-	FSTxExpense.String(trcmn.FlagReceipt, "", "Directory to receipt document file")
-	FSTxExpense.String(trcmn.FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
-	FSTxInvoiceEdit.String(trcmn.FlagID, "", "ID (hex) of the invoice to modify")
+	//only need to add apptx flags to this flagset as it's included in all invoice commands
+	bcmd.AddAppTxFlags(fsTxInvoice)
 
-	ContractOpenCmd.Flags().AddFlagSet(FSTxInvoice)
-	ContractEditCmd.Flags().AddFlagSet(FSTxInvoice)
-	ContractEditCmd.Flags().AddFlagSet(FSTxInvoiceEdit)
-	ExpenseOpenCmd.Flags().AddFlagSet(FSTxInvoice)
-	ExpenseOpenCmd.Flags().AddFlagSet(FSTxExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(FSTxInvoice)
-	ExpenseEditCmd.Flags().AddFlagSet(FSTxExpense)
-	ExpenseEditCmd.Flags().AddFlagSet(FSTxInvoiceEdit)
+	fsTxInvoice.String(trcmn.FlagTo, "allinbits", "Name of the invoice receiver")
+	fsTxInvoice.String(trcmn.FlagDepositInfo, "", "Deposit information for invoice payment (default: profile)")
+	fsTxInvoice.String(trcmn.FlagNotes, "", "Notes regarding the expense")
+	fsTxInvoice.String(trcmn.FlagCur, "", "Currency which invoice should be paid in")
+	fsTxInvoice.String(trcmn.FlagDate, "", "Invoice demon date in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
+	fsTxInvoice.String(trcmn.FlagDueDate, "", "Invoice due date in the format YYYY-MM-DD eg. 2016-12-31 (default: profile)")
+	fsTxExpense.String(trcmn.FlagReceipt, "", "Directory to receipt document file")
+	fsTxExpense.String(trcmn.FlagTaxesPaid, "", "Taxes amount in the format <decimal><currency> eg. 10.23usd")
+	fsTxInvoiceEdit.String(trcmn.FlagID, "", "ID (hex) of the invoice to modify")
+
+	ContractOpenCmd.Flags().AddFlagSet(fsTxInvoice)
+	ContractEditCmd.Flags().AddFlagSet(fsTxInvoice)
+	ContractEditCmd.Flags().AddFlagSet(fsTxInvoiceEdit)
+	ExpenseOpenCmd.Flags().AddFlagSet(fsTxInvoice)
+	ExpenseOpenCmd.Flags().AddFlagSet(fsTxExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(fsTxInvoice)
+	ExpenseEditCmd.Flags().AddFlagSet(fsTxExpense)
+	ExpenseEditCmd.Flags().AddFlagSet(fsTxInvoiceEdit)
 }
 
 func contractOpenCmd(cmd *cobra.Command, args []string) error {
@@ -101,7 +102,8 @@ func invoiceCmd(cmd *cobra.Command, args []string, TBTx byte) error {
 	}
 	amountStr := args[0]
 
-	data, err := invoiceTx(TBTx, txInput.Address, amountStr)
+	//TODO get the address here from txInput once changed in basecoin
+	data, err := invoiceTx(TBTx, txcmd.GetSigner().Address(), amountStr)
 	if err != nil {
 		return err
 	}

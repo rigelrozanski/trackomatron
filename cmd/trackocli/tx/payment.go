@@ -29,15 +29,19 @@ var PaymentCmd = &cobra.Command{
 }
 
 func init() {
-	FSTxPayment := flag.NewFlagSet("", flag.ContinueOnError)
-	FSTxPayment.String(trcmn.FlagIDs, "", "IDs to close during this transaction <id1>,<id2>,<id3>... ")
-	FSTxPayment.String(trcmn.FlagTransactionID, "", "Completed transaction ID")
-	FSTxPayment.String(trcmn.FlagPaid, "", "Payment amount in the format <decimal><currency> eg. 10.23usd")
-	FSTxPayment.String(trcmn.FlagDate, "", "Date payment in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
-	FSTxPayment.String(trcmn.FlagDateRange, "",
+	fsTxPayment := flag.NewFlagSet("", flag.ContinueOnError)
+
+	//add the default flags
+	bcmd.AddAppTxFlags(fsTxPayment)
+
+	fsTxPayment.String(trcmn.FlagIDs, "", "IDs to close during this transaction <id1>,<id2>,<id3>... ")
+	fsTxPayment.String(trcmn.FlagTransactionID, "", "Completed transaction ID")
+	fsTxPayment.String(trcmn.FlagPaid, "", "Payment amount in the format <decimal><currency> eg. 10.23usd")
+	fsTxPayment.String(trcmn.FlagDate, "", "Date payment in the format YYYY-MM-DD eg. 2016-12-31 (default: today)")
+	fsTxPayment.String(trcmn.FlagDateRange, "",
 		"Autoselect IDs within the date range start:end, where start/end are in the format YYYY-MM-DD, or empty. ex. --date 1991-10-21:")
 
-	PaymentCmd.Flags().AddFlagSet(FSTxPayment)
+	PaymentCmd.Flags().AddFlagSet(fsTxPayment)
 }
 
 func paymentCmd(cmd *cobra.Command, args []string) error {
@@ -54,7 +58,8 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 	}
 	receiver = args[0]
 
-	data, err := paymentTx(txInput.Address, receiver)
+	//TODO get the address here from txInput once changed in basecoin
+	data, err := paymentTx(txcmd.GetSigner().Address(), receiver)
 	if err != nil {
 		return err
 	}
@@ -80,25 +85,18 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 func paymentTx(senderAddr []byte, receiver string) ([]byte, error) {
 
 	flagIDs := viper.GetString(trcmn.FlagIDs)
-	flagDateRange := viper.GetString(trcmn.FlagDateRange)
+	dateRange := viper.GetString(trcmn.FlagDateRange)
 
-	if len(flagIDs) > 0 && len(flagDateRange) > 0 {
+	if len(flagIDs) > 0 && len(dateRange) > 0 {
 		return nil, errors.New("Cannot use both the IDs flag and date-range flag")
 	}
-	if len(flagIDs) == 0 && len(flagDateRange) == 0 {
+	if len(flagIDs) == 0 && len(dateRange) == 0 {
 		return nil, errors.New("Must include an IDs flag or date-range flag")
 	}
 
 	//Get the date range or list of IDs
 	var ids [][]byte
-	var startDate, endDate time.Time
-	if len(flagDateRange) > 0 {
-		var err error
-		startDate, endDate, err = common.ParseDateRange(flagDateRange)
-		if err != nil {
-			return nil, err
-		}
-	} else {
+	if len(dateRange) == 0 {
 		idsStr := strings.Split(flagIDs, ",")
 		for _, idHex := range idsStr {
 			if !cmn.IsHex(idHex) {
@@ -127,8 +125,7 @@ func paymentTx(senderAddr []byte, receiver string) ([]byte, error) {
 		IDs:           ids,
 		Receiver:      receiver,
 		Amt:           amt,
-		StartDate:     startDate,
-		EndDate:       endDate,
+		DateRange:     dateRange,
 	}
 
 	return invoicer.MarshalWithTB(tx, invoicer.TBTxPayment), nil

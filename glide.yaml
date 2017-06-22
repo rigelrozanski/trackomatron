@@ -8,8 +8,13 @@ import:
   version: develop
   subpackages:
   - types
+- package: github.com/tendermint/go-crypto
+  version: develop
+  subpackages:
+  - cmd
+  - keys
 - package: github.com/tendermint/basecoin
-  version: rebash
+  version: develop
   subpackages:
   - cmd/commands
   - state

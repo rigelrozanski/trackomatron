@@ -1,8 +1,8 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 
-all: get_vendor_deps install
+all: get_vendor_deps install test
 
-test: install test_cli test_unit
+test: install test_unit test_cli
 
 test_cli: 
 	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
