@@ -8,6 +8,7 @@ import (
 	btypes "github.com/tendermint/basecoin/types"
 	"github.com/tendermint/go-wire"
 
+	trcmn "github.com/tendermint/trackomatron/common"
 	types "github.com/tendermint/trackomatron/types"
 )
 
@@ -45,19 +46,29 @@ func runTxPayment(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 	}
 	sender := profile.Name
 
+	//parse the date range
+	startDate, endDate, err := trcmn.ParseDateRange(tx.DateRange)
+	if err != nil {
+		abciErrInternal(err)
+	}
+
 	payment := types.NewPayment(
 		tx.IDs,
 		tx.TransactionID,
 		sender,
 		tx.Receiver,
 		tx.Amt,
-		tx.StartDate,
-		tx.EndDate,
+		startDate,
+		endDate,
 	)
 
 	//If there are no IDs provided in payment tx
 	// then populate them based on date
 	if len(payment.InvoiceIDs) == 0 {
+		//return abciErrDecodingTX(fmt.Errorf("%v %v %v %v",
+		//payment.StartDate, payment.StartDate.IsZero(),
+		//payment.EndDate.UTC().Format(time.UnixDate), payment.EndDate.IsZero()))
+
 		listInvoices, err := getListBytes(store, ListInvoiceKey())
 		if err != nil {
 			return abci.ErrInternalError.AppendLog(err.Error())
@@ -73,8 +84,8 @@ func runTxPayment(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 
 			//skip record if out of the date range
 			d := ctx.Invoiced.CurTime.Date
-			if (payment.StartDate != nil && d.Before(*payment.StartDate)) ||
-				(payment.EndDate != nil && d.After(*payment.EndDate)) {
+			if (!payment.StartDate.IsZero() && d.Before(payment.StartDate)) ||
+				(!payment.EndDate.IsZero() && d.After(payment.EndDate)) {
 				continue
 			}
 

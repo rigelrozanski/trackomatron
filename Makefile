@@ -1,18 +1,13 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 
-all: get_vendor_deps install
+all: get_vendor_deps install test
 
-test: install test_lightcli test_heavycli test_unit
+test: install test_unit test_cli
 
-test_lightcli: 
+test_cli: 
 	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
 		-q -O test/shunit2 
-	bash test/lightcli.sh
-
-test_heavycli:
-	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
-		-q -O test/shunit2 
-	bash test/heavycli.sh
+	bash test/cli.sh
 
 test_unit:
 	@go test $(PACKAGES)
@@ -24,4 +19,4 @@ get_vendor_deps:
 	go get github.com/Masterminds/glide
 	glide install
 
-.PHONY: install test test_unit test_lightcli test_heavycli get_vendor_deps 
+.PHONY: install test test_unit test_cli get_vendor_deps 

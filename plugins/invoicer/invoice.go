@@ -60,7 +60,7 @@ func runTxInvoice(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 
 	date := time.Now()
 	if len(tx.Date) > 0 {
-		date, err = common.ParseDate(tx.Date)
+		date, err = time.Parse(common.TimeLayout, tx.Date)
 		if err != nil {
 			return abciErrInternal(err)
 		}
@@ -80,7 +80,7 @@ func runTxInvoice(store btypes.KVStore, txBytes []byte) (res abci.Result) {
 
 	var dueDate time.Time
 	if len(tx.DueDate) > 0 {
-		dueDate, err = common.ParseDate(tx.DueDate)
+		date, err = time.Parse(common.TimeLayout, tx.DueDate)
 		if err != nil {
 			return abciErrInternal(err)
 		}

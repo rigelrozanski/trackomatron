@@ -8,6 +8,11 @@ import:
   version: develop
   subpackages:
   - types
+- package: github.com/tendermint/go-crypto
+  version: develop
+  subpackages:
+  - cmd
+  - keys
 - package: github.com/tendermint/basecoin
   version: develop
   subpackages:
@@ -17,8 +22,8 @@ import:
 - package: github.com/tendermint/go-wire
   version: develop
 - package: github.com/tendermint/light-client
-  version: proofsubcmd
+  version: develop
 - package: github.com/tendermint/tendermint
-  version: 11b5d11e9eec170e1d3dce165f0270d5c0759d69
+  version: 4f0f50c62d41d39ad64e07ad642f705cc13c8229
 - package: github.com/tendermint/tmlibs
   version: stderr

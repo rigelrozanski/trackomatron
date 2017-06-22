@@ -21,7 +21,5 @@ dependencies:
 
 test:
   override:
-    - "cd $REPO && glide install && make install"
-    - ls $GOPATH/bin
-    - "cd $REPO && make test"
+    - "cd $REPO && make all"
 

@@ -6,11 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tendermint/basecoin/cmd/commands"
+	"github.com/tendermint/basecoin/cmd/basecoin/commands"
+	"github.com/tendermint/basecoin/types"
 	"github.com/tendermint/tmlibs/cli"
-
-	_ "github.com/tendermint/trackomatron/cmd/tracko/commands"
-	_ "github.com/tendermint/trackomatron/commands"
+	"github.com/tendermint/trackomatron/plugins/invoicer"
 )
 
 func main() {
@@ -22,16 +21,12 @@ func main() {
 	RootCmd.AddCommand(
 		commands.InitCmd,
 		commands.StartCmd,
-		commands.TxCmd,
-		commands.QueryCmd,
-		commands.KeyCmd,
-		commands.VerifyCmd,
-		commands.BlockCmd,
-		commands.AccountCmd,
+		commands.RelayCmd,
 		commands.UnsafeResetAllCmd,
 		commands.QuickVersionCmd("0.1.0"),
 	)
 
+	commands.RegisterStartPlugin(invoicer.Name, func() types.Plugin { return invoicer.New() })
 	cmd := cli.PrepareMainCmd(
 		RootCmd,
 		"TRK",
