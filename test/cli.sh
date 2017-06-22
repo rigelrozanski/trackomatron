@@ -195,6 +195,6 @@ testSums(){
 
 # load common and run these tests with shunit2!
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #get this files directory
-BCDIR="$GOPATH/src/github.com/tendermint/basecoin/tests/cli"
+BCDIR="$DIR/../vendor/github.com/tendermint/basecoin/tests/cli"
 . $BCDIR/common.sh
 . $DIR/shunit2
