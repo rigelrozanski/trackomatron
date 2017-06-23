@@ -102,8 +102,7 @@ func invoiceCmd(cmd *cobra.Command, args []string, TBTx byte) error {
 	}
 	amountStr := args[0]
 
-	//TODO get the address here from txInput once changed in basecoin
-	data, err := invoiceTx(TBTx, txcmd.GetSigner().Address(), amountStr)
+	data, err := invoiceTx(TBTx, txInput.Address, amountStr)
 	if err != nil {
 		return err
 	}

@@ -58,8 +58,7 @@ func paymentCmd(cmd *cobra.Command, args []string) error {
 	}
 	receiver = args[0]
 
-	//TODO get the address here from txInput once changed in basecoin
-	data, err := paymentTx(txcmd.GetSigner().Address(), receiver)
+	data, err := paymentTx(txInput.Address, receiver)
 	if err != nil {
 		return err
 	}
