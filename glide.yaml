@@ -14,7 +14,7 @@ import:
   - cmd
   - keys
 - package: github.com/tendermint/basecoin
-  version: develop
+  version: feature/132-earlier-sign
   subpackages:
   - cmd/commands
   - state

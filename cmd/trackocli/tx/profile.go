@@ -81,8 +81,7 @@ func profileCmd(cmd *cobra.Command, args []string, TBTx byte) error {
 		name = args[0]
 	}
 
-	//TODO get the address here from txInput once changed in basecoin
-	data := profileTx(TBTx, txcmd.GetSigner().Address(), name)
+	data := profileTx(TBTx, txInput.Address, name)
 
 	// Create AppTx and broadcast
 	tx := &btypes.AppTx{

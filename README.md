@@ -3,11 +3,11 @@
 Track invoices on the blockchain!
 
 ### Overview
-This software is intended to create a space to easily send invoices between and within
-institutions. Firstly, the commands of trackmatron are separated into two broad
-categories: submitting information to the blockchain (transactions), and
-retrieving information from the blockchain (query).  The transaction commands
-are separated into three main categories: 
+This software is intended to create a space to easily send invoices between and
+within institutions. Firstly, the commands of trackmatron are separated into
+two broad categories: submitting information to the blockchain (transactions),
+and retrieving information from the blockchain (query).  The transaction
+commands are separated into three main categories: 
  - Profile management
   - Open/edit/deactivate profiles 
  - Sending Invoices
@@ -17,9 +17,9 @@ are separated into three main categories:
  - Paying invoices
   - Bulk payment of invoices from a single receiver
 
-The querying information from the blockchain allows users so sort and retrieve profiles, 
-invoices by payments in bulk, additional utility is provided to allow to generate quick totals 
-of amount due between parties.  
+The querying information from the blockchain allows users so sort and retrieve
+profiles, invoices by payments in bulk, additional utility is provided to allow
+to generate quick totals of amount due between parties.  
 
 For a list of commands please see the section below `Commands`.
 
@@ -90,7 +90,8 @@ trackocli tx contract-open --invoice-amount=99.99USD --date=2017-01-01 --to=bud 
 trackocli proof state invoices | jq
 ```
 
-Great! Now you're ready to start using trackomatron to start invoicing all your friends!
+Great! Now you're ready to start using trackomatron to start invoicing all your
+friends!
 
 #### Close up shop
 In the first terminal window hit `ctrl-c`  
