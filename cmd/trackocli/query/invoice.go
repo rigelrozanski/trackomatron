@@ -42,6 +42,7 @@ var (
 func init() {
 	//register flags
 	FSQueryDownload := flag.NewFlagSet("", flag.ContinueOnError)
+	FSQueryInvoice := flag.NewFlagSet("", flag.ContinueOnError)
 	FSQueryInvoices := flag.NewFlagSet("", flag.ContinueOnError)
 	FSQueryDownload.String(trcmn.FlagDownloadExp, "", "Download expenses pdfs to the relative path specified")
 
@@ -53,8 +54,12 @@ func init() {
 	FSQueryInvoices.String(trcmn.FlagFrom, "", "Only query for invoices from these addresses in the format <ADDR1>,<ADDR2>, etc.")
 	FSQueryInvoices.String(trcmn.FlagTo, "", "Only query for invoices to these addresses in the format <ADDR1>,<ADDR2>, etc.")
 	FSQueryInvoices.Bool(trcmn.FlagSum, false, "Sum invoice values by sender")
+	FSQueryInvoices.Bool(trcmn.FlagLedger, false, "open a Ledger Wallet Bitcoin with Sum Amount details filled in")
+
+	FSQueryInvoice.Bool(trcmn.FlagLedger, false, "open a Ledger Wallet Bitcoin with transaction details filled in")
 
 	QueryInvoiceCmd.Flags().AddFlagSet(FSQueryDownload)
+	QueryInvoiceCmd.Flags().AddFlagSet(FSQueryInvoice)
 	QueryInvoicesCmd.Flags().AddFlagSet(FSQueryDownload)
 	QueryInvoicesCmd.Flags().AddFlagSet(FSQueryInvoices)
 }

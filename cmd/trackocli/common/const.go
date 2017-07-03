@@ -19,6 +19,7 @@ const (
 	//Query
 	FlagNum         string = "num"
 	FlagSum         string = "sum"
+	FlagLedger      string = "ledger"
 	FlagType        string = "type"
 	FlagFrom        string = "from"
 	FlagDownloadExp string = "download-expense"

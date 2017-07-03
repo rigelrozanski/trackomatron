@@ -1,4 +1,6 @@
 *.swp
+*.html
 vendor
 merkleeyes.db
 *shunit2
+common/ledger.js

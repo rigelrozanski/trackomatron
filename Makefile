@@ -16,6 +16,8 @@ install:
 	@go install ./cmd/...
 
 get_vendor_deps:
+	wget "https://raw.githubusercontent.com/LedgerHQ/ledger-wallet-api/master/ledger.js" \
+		-q -O common/ledger.js
 	go get github.com/Masterminds/glide
 	glide install
 
