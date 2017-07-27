@@ -24,6 +24,9 @@ to generate quick totals of amount due between parties.
 For a list of commands please see the section below `Commands`.
 
 ### Install
+
+For CLI testing to pass you must have [jq](https://stedolan.github.io/jq/download/) installed
+
 ```
 go get github.com/tendermint/trackomatron
 cd $GOPATH/src/github.com/tendermint/trackomatron
